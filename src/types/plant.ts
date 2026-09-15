@@ -1,0 +1,39 @@
+export type PlantPhoto = {
+  id: string
+  url: string
+  isMain: boolean
+}
+
+export type PlantVideo = {
+  id: string
+  url: string
+  posterUrl: string
+  durationSeconds: number
+}
+
+export type Plant = {
+  id: string
+  name: string
+  species: string
+  botanicalFamily: string
+  identification: string
+  notes: string
+  favorite: boolean
+  photos: PlantPhoto[]
+  videos: PlantVideo[]
+  createdAt: string
+  updatedAt: string
+}
+
+export type PlantDraft = {
+  name: string
+  species: string
+  botanicalFamily: string
+  identification: string
+  notes: string
+  photos: PlantPhoto[]
+  videos: PlantVideo[]
+}
+
+export const MAX_PHOTOS = 6
+export const MAX_VIDEO_SECONDS = 30
