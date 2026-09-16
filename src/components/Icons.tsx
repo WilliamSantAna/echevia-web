@@ -135,14 +135,3 @@ export function MuteIcon({ className = 'icon', muted = true }: IconProps & { mut
     </svg>
   )
 }
-
-export function IdentifyIcon({ className = 'icon' }: IconProps) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
-      <ellipse cx="8.2" cy="11.2" rx="2.8" ry="5.4" transform="rotate(-32 8.2 11.2)" />
-      <ellipse cx="15.8" cy="11.2" rx="2.8" ry="5.4" transform="rotate(32 15.8 11.2)" />
-      <ellipse cx="12" cy="9.4" rx="2.4" ry="5.8" />
-      <path d="M8.6 16.2h6.8l-.8 3.6H9.4l-.8-3.6Z" />
-    </svg>
-  )
-}

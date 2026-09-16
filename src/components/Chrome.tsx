@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import logoTextInk from '../assets/logo-text-ink.png'
 import logoTextLight from '../assets/logo-text.png'
+import identifyMark from '../assets/identify-mark.png'
 import { APP_VERSION } from '../lib/version'
 import { usePlantSearch } from '../lib/search'
 import { useTheme, type Theme } from '../store/theme'
 import { IdentifyPicker } from './IdentifyPicker'
-import { BackIcon, GridIcon, IdentifyIcon, MenuIcon, PlusIcon, VideosIcon } from './Icons'
+import { BackIcon, GridIcon, MenuIcon, PlusIcon, VideosIcon } from './Icons'
 
 type TopBarProps = {
   menuOpen: boolean
@@ -185,7 +186,7 @@ export function BottomNav() {
           aria-expanded={pickerOpen}
           onClick={() => setPickerOpen(true)}
         >
-          <IdentifyIcon />
+          <img className="bottom-nav__identify-mark" src={identifyMark} alt="" />
         </button>
         <NavLink to="/videos" aria-label="Vídeos">
           <VideosIcon />

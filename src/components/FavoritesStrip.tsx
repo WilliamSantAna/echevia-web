@@ -43,18 +43,20 @@ export function FavoritesStrip({ plants }: FavoritesStripProps) {
       startX: event.clientX,
       startScroll: node.scrollLeft,
     }
-    node.setPointerCapture(event.pointerId)
-    setDragging(true)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const origin = originRef.current
-    if (origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 8) {
-      skipClick.current = true
-    }
+    const moved = Boolean(origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 8)
+    if (moved) skipClick.current = true
     const drag = dragRef.current
     const node = scrollerRef.current
     if (!drag || !node || event.pointerId !== drag.pointerId) return
+    if (!moved && !dragging) return
+    if (!dragging) {
+      node.setPointerCapture(event.pointerId)
+      setDragging(true)
+    }
     node.scrollLeft = drag.startScroll - (event.clientX - drag.startX)
   }
 

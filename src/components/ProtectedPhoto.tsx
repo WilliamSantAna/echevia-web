@@ -19,11 +19,12 @@ export function ProtectedPhoto({ src, alt, className = '', watermark = false }: 
       className={`protected-photo ${className}`.trim()}
       onContextMenu={(event) => event.preventDefault()}
     >
-      <div
+      <img
         className="protected-photo__img"
-        style={{ backgroundImage: `url("${src}")` }}
-        role="img"
-        aria-label={alt}
+        src={src}
+        alt={alt}
+        draggable={false}
+        decoding="async"
       />
       <div className="protected-photo__shield" aria-hidden="true" />
       {watermark ? <span className="watermark">Echevia</span> : null}

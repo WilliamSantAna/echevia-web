@@ -114,56 +114,6 @@ function notesPreview(notes: string, max = 88) {
   return (lastSpace > 40 ? slice.slice(0, lastSpace) : slice).trim()
 }
 
-function luminanceOf(data: Uint8ClampedArray): number {
-  let sum = 0
-  const pixels = data.length / 4
-  for (let index = 0; index < data.length; index += 4) {
-    sum += (0.2126 * data[index] + 0.7152 * data[index + 1] + 0.0722 * data[index + 2]) / 255
-  }
-  return sum / Math.max(pixels, 1)
-}
-
-function isBrightLuma(value: number): boolean {
-  return value > 0.58
-}
-
-function sampleOverlayBrightness(src: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const image = new Image()
-    image.onload = () => {
-      const canvas = document.createElement('canvas')
-      canvas.width = 48
-      canvas.height = 32
-      const ctx = canvas.getContext('2d')
-      if (!ctx || !image.width || !image.height) {
-        resolve(false)
-        return
-      }
-      const sy = image.height * 0.72
-      ctx.drawImage(image, 0, sy, image.width, image.height - sy, 0, 0, 48, 32)
-      resolve(isBrightLuma(luminanceOf(ctx.getImageData(0, 0, 48, 32).data)))
-    }
-    image.onerror = () => resolve(false)
-    image.src = src
-  })
-}
-
-function sampleVideoBrightness(video: HTMLVideoElement): boolean | null {
-  if (video.readyState < 2 || !video.videoWidth || !video.videoHeight) return null
-  try {
-    const canvas = document.createElement('canvas')
-    canvas.width = 48
-    canvas.height = 32
-    const ctx = canvas.getContext('2d')
-    if (!ctx) return null
-    const sy = video.videoHeight * 0.72
-    ctx.drawImage(video, 0, sy, video.videoWidth, video.videoHeight - sy, 0, 0, 48, 32)
-    return isBrightLuma(luminanceOf(ctx.getImageData(0, 0, 48, 32).data))
-  } catch {
-    return null
-  }
-}
-
 type VideoCardProps = {
   plant: Plant
   src: string
@@ -176,35 +126,9 @@ function VideoCard({ plant, src, poster, onOpen }: VideoCardProps) {
   const [muted, setMuted] = useState(true)
   const [failed, setFailed] = useState(false)
   const [expanded, setExpanded] = useState(false)
-  const [bright, setBright] = useState(false)
   const fullNotes = plant.notes.trim().replace(/\s+/g, ' ')
   const preview = notesPreview(fullNotes)
   const truncated = Boolean(fullNotes) && preview !== fullNotes
-
-  useEffect(() => {
-    let cancelled = false
-    void sampleOverlayBrightness(poster).then((value) => {
-      if (!cancelled) setBright(value)
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [poster])
-
-  useEffect(() => {
-    const node = videoRef.current
-    if (!node) return
-
-    const readFrame = () => {
-      const fromVideo = sampleVideoBrightness(node)
-      if (fromVideo !== null) setBright(fromVideo)
-    }
-
-    node.addEventListener('playing', readFrame)
-    return () => {
-      node.removeEventListener('playing', readFrame)
-    }
-  }, [src])
 
   useEffect(() => {
     const node = videoRef.current
@@ -226,7 +150,7 @@ function VideoCard({ plant, src, poster, onOpen }: VideoCardProps) {
   }, [])
 
   return (
-    <article className={`video-card${expanded ? ' is-expanded' : ''}${bright ? ' is-bright' : ''}`}>
+    <article className={`video-card${expanded ? ' is-expanded' : ''}`}>
       {failed ? (
         <div className="video-card__fallback" style={{ backgroundImage: `url("${poster}")` }} />
       ) : (

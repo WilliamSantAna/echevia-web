@@ -348,25 +348,26 @@ img {
   width: 52px;
   height: 52px;
   margin: 0 auto;
+  padding: 0;
   border: 0;
   border-radius: 50%;
+  overflow: hidden;
   display: grid;
   place-items: center;
-  background: linear-gradient(135deg, var(--orange), var(--pink-deep));
-  color: #1f7a45;
-  box-shadow: 0 8px 18px rgba(200, 54, 75, 0.28);
+  background: var(--green-950);
+  box-shadow: none;
   cursor: pointer;
 }
 
-.bottom-nav__identify .icon {
-  width: 20px;
-  height: 20px;
-  stroke: #1f7a45;
-  fill: #2f9a58;
+.bottom-nav__identify-mark {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
 }
 
 .bottom-nav__identify.is-active {
-  box-shadow: 0 0 0 3px color-mix(in srgb, var(--pink) 55%, transparent), 0 8px 18px rgba(200, 54, 75, 0.28);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--green-400) 70%, transparent);
 }
 
 .bottom-nav .nav-add.active {
@@ -484,8 +485,10 @@ img {
 .protected-photo__img {
   position: absolute;
   inset: 0;
-  background-size: cover;
-  background-position: center;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
   pointer-events: none;
 }
 
@@ -539,8 +542,9 @@ img {
 .video-card__scrim {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, transparent 40%, rgba(4, 20, 15, 0.86));
+  background: linear-gradient(180deg, transparent 48%, rgba(0, 0, 0, 0.42) 100%);
   z-index: 2;
+  pointer-events: none;
 }
 
 .video-card__meta {
@@ -549,16 +553,17 @@ img {
   right: 80px;
   bottom: 24px;
   z-index: 3;
-  color: #fffcf7;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.55), 0 4px 16px rgba(0, 0, 0, 0.45);
+  color: #fff;
   text-align: left;
+  text-shadow: none;
+  -webkit-font-smoothing: antialiased;
   max-height: calc(100% - 36px);
   overflow-y: auto;
   overscroll-behavior: contain;
 }
 
 .video-card.is-expanded .video-card__scrim {
-  background: linear-gradient(180deg, transparent 8%, rgba(4, 20, 15, 0.92));
+  background: linear-gradient(180deg, transparent 18%, rgba(0, 0, 0, 0.5) 100%);
 }
 
 .video-card__open {
@@ -607,8 +612,10 @@ img {
 .video-card__notes {
   margin: 0;
   font-size: small;
-  opacity: 0.86;
+  color: #fff;
+  opacity: 0.95;
   line-height: 1.35;
+  text-shadow: none;
 }
 
 .video-card__more {
@@ -647,17 +654,6 @@ img {
   font-weight: 800;
 }
 
-.video-card.is-bright .video-card__meta {
-  color: #14241c;
-  text-shadow: 0 1px 2px rgba(255, 252, 247, 0.7), 0 4px 14px rgba(255, 252, 247, 0.45);
-}
-
-.video-card.is-bright .video-card__actions button,
-.video-card.is-bright .video-card__actions a {
-  background: rgba(20, 36, 28, 0.16);
-  color: #14241c;
-}
-
 .video-card__actions button.is-on {
   color: var(--pink);
 }
@@ -673,31 +669,16 @@ img {
 }
 
 .carousel {
-  display: flex;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
   background: var(--green-900);
-  touch-action: pan-y;
-  -webkit-overflow-scrolling: touch;
-  overscroll-behavior-x: contain;
   cursor: zoom-in;
 }
 
 .carousel.is-dragging {
   cursor: grabbing;
-  scroll-snap-type: none;
-}
-
-.carousel::-webkit-scrollbar {
-  display: none;
 }
 
 .carousel .protected-photo {
   position: relative;
-  flex: 0 0 100%;
-  width: 100%;
-  scroll-snap-align: start;
   aspect-ratio: var(--photo-aspect);
   margin: 0;
 }
@@ -734,37 +715,16 @@ img {
   inset: 0;
   z-index: 100;
   background: rgb(5 8 3 / 90%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
   cursor: zoom-out;
 }
 
-.lightbox__track {
-  display: flex;
+.lightbox__pager {
   width: 100%;
   height: 100%;
-  overflow-x: auto;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  touch-action: pan-x;
-  cursor: grab;
-}
-
-.lightbox__track.is-dragging {
-  cursor: grabbing;
-  scroll-snap-type: none;
-}
-
-.lightbox__track::-webkit-scrollbar {
-  display: none;
 }
 
 .lightbox__slide {
-  flex: 0 0 100%;
-  width: 100%;
   height: 100%;
-  scroll-snap-align: start;
 }
 
 .lightbox__photo {
@@ -774,8 +734,38 @@ img {
 }
 
 .lightbox__photo .protected-photo__img {
-  background-size: contain;
-  background-repeat: no-repeat;
+  object-fit: contain;
+}
+
+.swipe-pager {
+  overflow: hidden;
+  width: 100%;
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.lightbox__pager.swipe-pager {
+  touch-action: none;
+  cursor: zoom-out;
+}
+
+.lightbox__pager.swipe-pager.is-dragging {
+  cursor: grabbing;
+}
+
+.swipe-pager__track {
+  display: flex;
+  height: 100%;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.swipe-pager__slide {
+  flex: 0 0 auto;
+  transform: translateZ(0);
 }
 
 .plant-body {
