@@ -134,7 +134,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
               </div>
               <div>
                 <dt>Proprietário</dt>
-                <dd>William Sant Ana - Senior Full Stack Engineer - (31) 9 8501-3019</dd>
+                <dd>William Sant Ana</dd>
               </div>
               <div>
                 <dt>Licenciado para</dt>
@@ -143,7 +143,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
             </dl>
           </section>
           <p className="menu-drawer__copy">
-            Copyright © 2026 Everest Inteligência de Mercado Ltda
+            Copyright © 2026 Everest I.M Ltda
           </p>
         </div>
       </aside>

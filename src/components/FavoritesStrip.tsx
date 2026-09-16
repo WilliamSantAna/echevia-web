@@ -96,8 +96,14 @@ export function FavoritesStrip({ plants }: FavoritesStripProps) {
       </section>
       {active ? (
         <Lightbox
-          src={active.photo.url}
-          alt={active.plant.name}
+          items={tiles.map((tile) => ({
+            src: tile.photo.url,
+            alt: tile.plant.name,
+          }))}
+          index={Math.max(
+            0,
+            tiles.findIndex((tile) => tile.key === active.key),
+          )}
           label={`${active.plant.name} em tela cheia`}
           onClose={() => setActive(null)}
         />

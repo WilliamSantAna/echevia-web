@@ -17,9 +17,9 @@ const pages: Record<LegalSlug, { title: string; body: string[] }> = {
   privacidade: {
     title: 'Política de privacidade',
     body: [
-      'A Echevia trata a coleção como dado pessoal do dispositivo: nomes de plantas, notas, fotos e vídeos ficam no armazenamento local do navegador (incluindo persistência em localStorage) e nos arquivos que você escolhe enviar.',
-      'Não pedimos conta, e-mail nem cadastro. Preferências de tema também são salvas só neste aparelho.',
-      'Não usamos cookies de rastreamento nem enviamos a coleção a servidores de terceiros nesta versão. Recursos futuros de sincronização serão descritos nesta política antes de entrar em produção.',
+      'A Echevia trata a coleção como dado pessoal: nomes de plantas, notas, fotos e vídeos podem ficar no armazenamento local do navegador e também podem ser salvos na API da Echevia, quando essa sincronização estiver em uso.',
+      'Não pedimos conta, e-mail nem cadastro nesta versão. Preferências de tema são salvas neste aparelho.',
+      'Não usamos cookies de rastreamento. Fotos enviadas para identificação de espécie são encaminhadas à Pl@ntNet somente para essa consulta. Demais dados da coleção só vão a servidores da Echevia quando a API for utilizada.',
       'Você pode apagar plantas individualmente ou limpar os dados do site nas configurações do navegador. Essa ação é irreversível neste dispositivo.',
       'Dúvidas sobre privacidade podem ser encaminhadas ao proprietário indicado na seção Sobre do menu.',
     ],

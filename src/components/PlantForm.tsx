@@ -251,12 +251,6 @@ export function PlantForm({
           <CameraIcon />
         </button>
       </div>
-      <small className="picker-hint">
-        {allowPhotos
-          ? `${photos.length}/${MAX_PHOTOS} fotos · toque na estrela para a principal`
-          : `${videoUrl ? '1/1' : '0/1'} vídeo · até ${MAX_VIDEO_SECONDS}s`}
-        {allowVideo && allowPhotos && videoUrl ? ' · vídeo anexado' : ''}
-      </small>
       <input
         ref={cameraRef}
         type="file"

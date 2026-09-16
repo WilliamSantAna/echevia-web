@@ -21,6 +21,7 @@ export function PhotoCarousel({
   const innerRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number } | null>(null)
   const originRef = useRef<{ x: number; y: number } | null>(null)
+  const axisRef = useRef<'x' | 'y' | null>(null)
   const skipClick = useRef(false)
   const [dragging, setDragging] = useState(false)
   const [lightbox, setLightbox] = useState(false)
@@ -40,7 +41,8 @@ export function PhotoCarousel({
   const onPointerDown = (event: PointerEvent<HTMLDivElement>) => {
     skipClick.current = false
     originRef.current = { x: event.clientX, y: event.clientY }
-    if (!canSlide || event.pointerType !== 'mouse' || event.button !== 0) return
+    axisRef.current = null
+    if (!canSlide || (event.pointerType === 'mouse' && event.button !== 0)) return
     const node = scroller()
     if (!node) return
     dragRef.current = {
@@ -48,27 +50,38 @@ export function PhotoCarousel({
       startX: event.clientX,
       startScroll: node.scrollLeft,
     }
-    node.setPointerCapture(event.pointerId)
-    setDragging(true)
   }
 
   const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
     const origin = originRef.current
-    if (
-      origin &&
-      Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 8
-    ) {
+    if (origin && Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > 8) {
       skipClick.current = true
     }
     const drag = dragRef.current
     const node = scroller()
     if (!drag || !node || event.pointerId !== drag.pointerId) return
-    node.scrollLeft = drag.startScroll - (event.clientX - drag.startX)
+
+    const dx = event.clientX - drag.startX
+    const dy = origin ? event.clientY - origin.y : 0
+    if (!axisRef.current) {
+      if (Math.hypot(dx, dy) < 10) return
+      axisRef.current = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+      if (axisRef.current === 'y') {
+        dragRef.current = null
+        return
+      }
+      node.setPointerCapture(event.pointerId)
+      setDragging(true)
+    }
+    if (axisRef.current !== 'x') return
+    event.preventDefault()
+    node.scrollLeft = drag.startScroll - dx
   }
 
   const endDrag = (event: PointerEvent<HTMLDivElement>) => {
     const drag = dragRef.current
     const node = scroller()
+    axisRef.current = null
     if (!drag || !node || event.pointerId !== drag.pointerId) return
     dragRef.current = null
     setDragging(false)
@@ -116,10 +129,13 @@ export function PhotoCarousel({
           ))}
         </div>
       ) : null}
-      {lightbox && current ? (
+      {lightbox ? (
         <Lightbox
-          src={current.url}
-          alt={plantName}
+          items={photos.map((photo, index) => ({
+            src: photo.url,
+            alt: `${plantName} · foto ${index + 1}`,
+          }))}
+          index={active}
           label={`${plantName} em tela cheia`}
           onClose={() => setLightbox(false)}
         />
