@@ -1,7 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-export default defineConfig({
+const HOSTGATOR_BASE = '/echevia/'
+
+export default defineConfig(({ command }) => ({
+  base: command === 'build' ? HOSTGATOR_BASE : '/',
   plugins: [react()],
   server: {
     host: true,
@@ -13,4 +16,4 @@ export default defineConfig({
       },
     },
   },
-})
+}))

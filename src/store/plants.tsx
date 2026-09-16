@@ -5,7 +5,26 @@ import { createId } from '../lib/id'
 import { isHttpUrl } from '../lib/media'
 import type { Plant, PlantDraft } from '../types/plant'
 
-const STORAGE_KEY = 'echevia.plants.v4'
+const STORAGE_KEY = 'echevia.plants.v6'
+
+function relocateMockAsset(url: string): string {
+  if (!url.startsWith('/mock/')) return url
+  return `${import.meta.env.BASE_URL}${url.replace(/^\//, '')}`
+}
+
+function normalizePlants(plants: Plant[]): Plant[] {
+  return plants.map((plant) => ({
+    ...plant,
+    photos: plant.photos.map((photo) => ({
+      ...photo,
+      url: relocateMockAsset(photo.url),
+    })),
+    videos: plant.videos.map((video) => ({
+      ...video,
+      posterUrl: relocateMockAsset(video.posterUrl),
+    })),
+  }))
+}
 
 function loadPlants(): Plant[] {
   try {
@@ -13,7 +32,7 @@ function loadPlants(): Plant[] {
     if (!raw) return seedPlants
     const parsed = JSON.parse(raw) as Plant[]
     if (!Array.isArray(parsed) || parsed.length === 0) return seedPlants
-    return parsed
+    return normalizePlants(parsed)
   } catch {
     return seedPlants
   }

@@ -6,9 +6,24 @@ Os dados desta etapa são **mock** (coleção de exemplo + persistência local).
 
 ## API
 
-No `.env.local`, `VITE_API_URL` vazio faz o Vite encaminhar `/api` para `http://127.0.0.1:8000`. Em produção, aponte para a URL da API na HostGator, por exemplo:
+No `.env.local`, `VITE_API_URL` vazio faz o Vite encaminhar `/api` para `http://127.0.0.1:8000`. Em produção (`.env.production`):
 
-`VITE_API_URL=https://marketingcriativa.com.br/clientes/echevia/echevia-api`
+`VITE_API_URL=https://marketingcriativa.com.br/clientes/echevia/echevia-api/public`
+
+## Hospedagem (HostGator)
+
+A pasta pública deve receber o **build** (`npm run build` → conteúdo de `dist/`), não o código-fonte React. Sem Node na hospedagem, o build é local.
+
+```bash
+npm install
+npm run build
+```
+
+Envie o conteúdo de `dist/` para `public_html/echevia`. Pasta em 755, arquivos em 644.
+
+URL: https://marketingcriativa.com.br/echevia/
+
+Não clone o repositório fonte nessa pasta: o `index.html` do Git ainda aponta para `/src/main.tsx` e não roda no Apache.
 
 ## Stack
 

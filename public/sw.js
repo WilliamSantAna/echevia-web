@@ -1,5 +1,6 @@
-const CACHE = 'echevia-v1'
-const PRECACHE = ['/', '/index.html', '/manifest.webmanifest', '/favicon.png']
+const CACHE = 'echevia-v3'
+const BASE = self.location.pathname.replace(/sw\.js$/, '')
+const PRECACHE = [BASE, `${BASE}index.html`, `${BASE}manifest.webmanifest`, `${BASE}favicon.png`]
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()))
@@ -19,10 +20,12 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone()
-        caches.open(CACHE).then((cache) => cache.put(event.request, copy))
+        if (response.ok) {
+          const copy = response.clone()
+          void caches.open(CACHE).then((cache) => cache.put(event.request, copy))
+        }
         return response
       })
-      .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/'))),
+      .catch(() => caches.match(event.request).then((cached) => cached || caches.match(BASE))),
   )
 })

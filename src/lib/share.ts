@@ -3,7 +3,8 @@ export function plantSharePath(identification: string): string {
 }
 
 export function plantShareUrl(identification: string): string {
-  return `${window.location.origin}${plantSharePath(identification)}`
+  const base = import.meta.env.BASE_URL.replace(/\/$/, '')
+  return `${window.location.origin}${base}${plantSharePath(identification)}`
 }
 
 export async function sharePlant(

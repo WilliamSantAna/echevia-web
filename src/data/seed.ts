@@ -1,10 +1,14 @@
 import type { Plant, PlantPhoto, PlantVideo } from '../types/plant'
 
+function publicUrl(path: string): string {
+  return `${import.meta.env.BASE_URL}${path.replace(/^\//, '')}`
+}
+
 function photo(id: string, file: string, isMain = false): PlantPhoto {
   return {
     id,
     isMain,
-    url: `/mock/${file}`,
+    url: publicUrl(`mock/${file}`),
   }
 }
 
@@ -12,7 +16,7 @@ function video(id: string, url: string, poster: string, durationSeconds: number)
   return {
     id,
     url,
-    posterUrl: `/mock/${poster}`,
+    posterUrl: publicUrl(`mock/${poster}`),
     durationSeconds,
   }
 }
