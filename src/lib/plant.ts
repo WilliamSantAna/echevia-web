@@ -1,7 +1,11 @@
-import type { Plant } from '../types/plant'
+import type { Plant, PlantPhoto } from '../types/plant'
+
+export function mainPhotoRecord(plant: Plant): PlantPhoto | undefined {
+  return plant.photos.find((photo) => photo.isMain) ?? plant.photos[0]
+}
 
 export function mainPhoto(plant: Plant): string | undefined {
-  return plant.photos.find((photo) => photo.isMain)?.url ?? plant.photos[0]?.url
+  return mainPhotoRecord(plant)?.url
 }
 
 export function plantMatchesQuery(plant: Plant, query: string): boolean {

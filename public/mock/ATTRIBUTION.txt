@@ -1,2 +1,4 @@
 Mock photos in this folder come from Pexels (https://www.pexels.com/license/).
 They are placeholders for development and can be replaced by user-uploaded photos.
+
+echevia-audio.mp4 is a short spoken sample (mediaelement echo-hereweare) used so mute/unmute can be tested.

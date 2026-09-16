@@ -42,7 +42,9 @@ function loadPlants(): Plant[] {
 function persist(plants: Plant[]) {
   const serializable = plants.map((plant) => ({
     ...plant,
-    videos: plant.videos.filter((video) => isHttpUrl(video.url)),
+    videos: plant.videos.filter(
+      (video) => isHttpUrl(video.url) || video.url.includes('/mock/'),
+    ),
   }))
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable))

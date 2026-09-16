@@ -19,25 +19,16 @@ type Tile = {
 
 export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
   const tiles: Tile[] = plants.flatMap((plant) => {
-    const photos = plant.photos.map((photo, index) => ({
-      key: `${plant.id}-${photo.id}`,
-      plant,
-      src: photo.url,
-      alt: `${plant.name} · foto ${index + 1}`,
-    }))
-    if (photos.length === 0) {
-      const src = mainPhoto(plant)
-      if (!src) return []
-      return [
-        {
-          key: `${plant.id}-main`,
-          plant,
-          src,
-          alt: plant.name,
-        },
-      ]
-    }
-    return photos
+    const src = mainPhoto(plant)
+    if (!src) return []
+    return [
+      {
+        key: plant.id,
+        plant,
+        src,
+        alt: plant.name,
+      },
+    ]
   })
 
   if (tiles.length === 0) {

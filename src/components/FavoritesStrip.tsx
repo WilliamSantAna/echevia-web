@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent } from 'react'
+import { mainPhotoRecord } from '../lib/plant'
 import type { Plant, PlantPhoto } from '../types/plant'
 import { Lightbox } from './Lightbox'
 import { ProtectedPhoto } from './ProtectedPhoto'
@@ -14,15 +15,12 @@ type FavoriteTile = {
 }
 
 export function FavoritesStrip({ plants }: FavoritesStripProps) {
-  const tiles: FavoriteTile[] = plants.flatMap((plant) =>
-    plant.favorite
-      ? plant.photos.map((photo) => ({
-          key: `${plant.id}-${photo.id}`,
-          plant,
-          photo,
-        }))
-      : [],
-  )
+  const tiles: FavoriteTile[] = plants.flatMap((plant) => {
+    if (!plant.favorite) return []
+    const photo = mainPhotoRecord(plant)
+    if (!photo) return []
+    return [{ key: plant.id, plant, photo }]
+  })
   const scrollerRef = useRef<HTMLDivElement>(null)
   const dragRef = useRef<{ pointerId: number; startX: number; startScroll: number } | null>(null)
   const originRef = useRef<{ x: number; y: number } | null>(null)
