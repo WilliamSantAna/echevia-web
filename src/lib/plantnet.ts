@@ -68,7 +68,7 @@ export async function identifySpecies(image: File): Promise<PlantNetMatch[]> {
     )
   }
 
-  return matches
+  return matches.slice(0, 2)
 }
 
 export function prefillFromMatch(match: PlantNetMatch, photoUrl: string): IdentifyPrefill {

@@ -73,25 +73,42 @@ html[data-theme='dark'] {
   box-sizing: border-box;
 }
 
-html,
-body,
-#root {
-  min-height: 100%;
-  margin: 0;
-}
-
 html {
   height: 100%;
+  height: -webkit-fill-available;
+}
+
+html,
+body {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  background: var(--app-bg);
+}
+
+body,
+#root {
+  height: 100%;
+  min-height: 100%;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+}
+
+#root {
+  width: 100%;
+  max-width: 100%;
 }
 
 body {
-  min-height: 100dvh;
   font-family: var(--font);
   color: var(--ink);
-  background: linear-gradient(180deg, var(--lilac) 0%, var(--teal) 42%, var(--cream) 78%);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 button,
@@ -112,13 +129,15 @@ img {
 }
 
 .app-shell {
-  min-height: 100dvh;
-  height: 100dvh;
+  position: fixed;
+  inset: 0;
   width: 100%;
   max-width: none;
+  height: 100%;
+  min-height: 100%;
+  min-height: -webkit-fill-available;
   margin: 0;
   background: linear-gradient(185deg, var(--app-bg) 28%, var(--app-bg-2) 100%);
-  position: relative;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -130,6 +149,8 @@ img {
   }
 
   .app-shell {
+    position: relative;
+    inset: auto;
     max-width: 430px;
     width: 430px;
     height: min(calc(100dvh - 32px), 920px);
@@ -150,7 +171,7 @@ img {
 
 .topbar {
   display: grid;
-  grid-template-columns: 46px 1fr 46px;
+  grid-template-columns: 35px 1fr 35px;
   align-items: center;
   gap: 8px;
   padding: calc(10px + var(--safe-top)) 12px 9px;
@@ -174,8 +195,8 @@ img {
 
 .topbar__btn,
 .topbar__add {
-  width: 46px;
-  height: 46px;
+  width: 35px;
+  height: 35px;
   display: grid;
   place-items: center;
   border: 0;
@@ -322,8 +343,8 @@ img {
   display: grid;
   grid-template-columns: 1fr 72px 1fr;
   align-items: center;
-  height: calc(var(--nav-h) + var(--safe-bottom));
-  padding-bottom: var(--safe-bottom);
+  height: var(--nav-h);
+  padding-bottom: 0;
   background: linear-gradient(180deg, var(--nav-start), var(--nav-end));
   border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent);
 }

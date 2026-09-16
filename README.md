@@ -2,7 +2,7 @@
 
 App para gerenciar uma coleção de suculentas. Esta é a interface em React, publicada como PWA: abre no navegador e também pode ser instalada no celular (Android/iOS/tablet) em modo standalone, com aparência de aplicativo nativo.
 
-Os dados desta etapa são **mock** (coleção de exemplo + persistência local). As fotos de exemplo estão em `public/mock` (Pexels). A identificação de espécies chama a API Laravel (`echevia-api`), que por sua vez fala com a Pl@ntNet.
+Os dados desta etapa são **mock** (coleção de exemplo + persistência local). As fotos de exemplo estão em `public/mock` (Pexels). A identificação de espécies chama a API Laravel (`echevia-api`), que por sua vez fala com a PlantNet.
 
 ## API
 

@@ -20,13 +20,20 @@ export function IdentifyPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const incoming = readState(location.state)
+  const [photoUrl, setPhotoUrl] = useState<string | null>(incoming?.imageDataUrl ?? null)
   const [pickerOpen, setPickerOpen] = useState(!incoming)
   const [loading, setLoading] = useState(Boolean(incoming))
   const [error, setError] = useState('')
   const [matches, setMatches] = useState<PlantNetMatch[]>([])
 
   useEffect(() => {
-    if (!incoming) {
+    if (!incoming?.imageDataUrl) return
+    setPhotoUrl(incoming.imageDataUrl)
+    setPickerOpen(false)
+  }, [incoming?.imageDataUrl])
+
+  useEffect(() => {
+    if (!photoUrl) {
       setLoading(false)
       setMatches([])
       return
@@ -37,7 +44,7 @@ export function IdentifyPage() {
     setError('')
     setMatches([])
 
-    void identifySpecies(dataUrlToFile(incoming.imageDataUrl))
+    void identifySpecies(dataUrlToFile(photoUrl))
       .then((next) => {
         if (!cancelled) setMatches(next)
       })
@@ -52,22 +59,22 @@ export function IdentifyPage() {
     return () => {
       cancelled = true
     }
-  }, [incoming?.imageDataUrl])
+  }, [photoUrl])
 
   return (
     <article className="identify-page">
-      {incoming ? (
+      {photoUrl ? (
         <div className="identify-hero">
-          <img src={incoming.imageDataUrl} alt="Foto enviada para identificação" />
+          <img src={photoUrl} alt="Foto enviada para identificação" />
         </div>
       ) : (
         <div className="empty">
           <h2>Identificar espécie</h2>
-          <p>Abra a câmera ou escolha uma foto da galeria para consultar a Pl@ntNet.</p>
+          <p>Abra a câmera ou escolha uma foto da galeria para consultar a PlantNet.</p>
         </div>
       )}
 
-      {loading ? <p className="identify-status">Consultando a Pl@ntNet…</p> : null}
+      {loading ? <p className="identify-status">Consultando a PlantNet…</p> : null}
       {error ? <p className="identify-error">{error}</p> : null}
 
       {matches.length > 0 ? (
@@ -91,10 +98,12 @@ export function IdentifyPage() {
                 type="button"
                 className="btn btn-primary"
                 onClick={() => {
-                  if (!incoming) return
-                  navigate('/nova', {
-                    state: prefillFromMatch(match, incoming.imageDataUrl),
-                  })
+                  if (!photoUrl) return
+                  const prefill = prefillFromMatch(match, photoUrl)
+                  navigate('/identificar', { replace: true, state: null })
+                  window.setTimeout(() => {
+                    navigate('/nova', { state: prefill })
+                  }, 0)
                 }}
               >
                 Cadastrar esta planta
@@ -106,13 +115,13 @@ export function IdentifyPage() {
 
       <div className="identify-actions">
         <button type="button" className="btn btn-ghost" onClick={() => setPickerOpen(true)}>
-          {incoming ? 'Outra foto' : 'Escolher foto'}
+          {photoUrl ? 'Outra foto' : 'Escolher foto'}
         </button>
         <Link className="btn btn-ghost" to="/">
           Cancelar
         </Link>
       </div>
-      <p className="identify-credit">Identificação via Pl@ntNet</p>
+      <p className="identify-credit">Identificação via PlantNet</p>
       <IdentifyPicker open={pickerOpen} onClose={() => setPickerOpen(false)} />
     </article>
   )
