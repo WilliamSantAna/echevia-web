@@ -15,8 +15,8 @@ function readTheme(): Theme {
 }
 
 const THEME_COLORS: Record<Theme, string> = {
-  light: '#c9e4c7',
-  dark: '#0c1415',
+  light: '#ffffff',
+  dark: '#000000',
 }
 
 function applyTheme(theme: Theme) {

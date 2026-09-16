@@ -88,8 +88,8 @@ export function IdentifyPage() {
                   <div className="identify-match__thumb identify-match__thumb--empty" />
                 )}
                 <div className="identify-match__body">
-                  <strong>{match.scientificName}</strong>
-                  <span>{match.commonName}</span>
+                  <strong>{match.commonName}</strong>
+                  <span>{match.scientificName}</span>
                   {match.family ? <em>{match.family}</em> : null}
                   <b>{Math.round(match.score * 100)}%</b>
                 </div>

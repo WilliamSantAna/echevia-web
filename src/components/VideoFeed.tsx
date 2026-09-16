@@ -20,6 +20,7 @@ export function VideoFeed({ plants }: VideoFeedProps) {
   )
   const scrollerRef = useRef<HTMLElement>(null)
   const navigate = useNavigate()
+  const [muted, setMuted] = useState(true)
 
   useLayoutEffect(() => {
     const node = scrollerRef.current
@@ -98,6 +99,8 @@ export function VideoFeed({ plants }: VideoFeedProps) {
           plant={item.plant}
           src={item.video.url}
           poster={item.video.posterUrl}
+          muted={muted}
+          onMutedChange={setMuted}
           onOpen={() => navigate(`/plantas/${item.plant.id}`)}
         />
       ))}
@@ -118,17 +121,33 @@ type VideoCardProps = {
   plant: Plant
   src: string
   poster: string
+  muted: boolean
+  onMutedChange: (muted: boolean) => void
   onOpen: () => void
 }
 
-function VideoCard({ plant, src, poster, onOpen }: VideoCardProps) {
+function applyMute(node: HTMLVideoElement, muted: boolean) {
+  node.muted = muted
+  node.defaultMuted = muted
+  node.volume = muted ? 0 : 1
+}
+
+function VideoCard({ plant, src, poster, muted, onMutedChange, onOpen }: VideoCardProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const [muted, setMuted] = useState(true)
   const [failed, setFailed] = useState(false)
   const [expanded, setExpanded] = useState(false)
   const fullNotes = plant.notes.trim().replace(/\s+/g, ' ')
   const preview = notesPreview(fullNotes)
   const truncated = Boolean(fullNotes) && preview !== fullNotes
+
+  useEffect(() => {
+    const node = videoRef.current
+    if (!node) return
+    applyMute(node, muted)
+    const sync = () => applyMute(node, muted)
+    node.addEventListener('play', sync)
+    return () => node.removeEventListener('play', sync)
+  }, [muted])
 
   useEffect(() => {
     const node = videoRef.current
@@ -202,7 +221,21 @@ function VideoCard({ plant, src, poster, onOpen }: VideoCardProps) {
         >
           <ShareIcon />
         </button>
-        <button type="button" onClick={() => setMuted((value) => !value)}>
+        <button
+          type="button"
+          aria-label={muted ? 'Ativar som' : 'Silenciar'}
+          aria-pressed={!muted}
+          className={muted ? undefined : 'is-on'}
+          onClick={() => {
+            const next = !muted
+            const node = videoRef.current
+            if (node) {
+              applyMute(node, next)
+              if (!next) void node.play().catch(() => undefined)
+            }
+            onMutedChange(next)
+          }}
+        >
           <MuteIcon muted={muted} />
         </button>
       </div>

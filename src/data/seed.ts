@@ -22,8 +22,14 @@ function video(id: string, url: string, poster: string, durationSeconds: number)
 }
 
 const FLOWER_CLIP = 'https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4'
-const PLANT_CLIP = 'https://videos.pexels.com/video-files/856973/856973-hd_1920_1080_25fps.mp4'
-const LEAF_CLIP = 'https://videos.pexels.com/video-files/1448735/1448735-uhd_2560_1440_24fps.mp4'
+const SILENT_MOCK_CLIPS = [
+  'https://videos.pexels.com/video-files/856973/856973-hd_1920_1080_25fps.mp4',
+  'https://videos.pexels.com/video-files/1448735/1448735-uhd_2560_1440_24fps.mp4',
+]
+
+export function relocateMockVideoUrl(url: string): string {
+  return SILENT_MOCK_CLIPS.includes(url) ? FLOWER_CLIP : url
+}
 
 export const seedPlants: Plant[] = [
   {
@@ -59,7 +65,7 @@ export const seedPlants: Plant[] = [
       photo('ele-3', 'haworthia-shelf.jpg'),
       photo('ele-4', 'echeveria-pot.jpg'),
     ],
-    videos: [video('ele-v1', PLANT_CLIP, 'echeveria-mix.jpg', 18)],
+    videos: [video('ele-v1', FLOWER_CLIP, 'echeveria-mix.jpg', 18)],
     createdAt: '2026-01-20T09:00:00.000Z',
     updatedAt: '2026-07-11T14:22:00.000Z',
   },
@@ -90,7 +96,7 @@ export const seedPlants: Plant[] = [
       photo('jade-2', 'potting.jpg'),
       photo('jade-3', 'collection.jpg'),
     ],
-    videos: [video('jade-v1', LEAF_CLIP, 'sansevieria.jpg', 24)],
+    videos: [video('jade-v1', FLOWER_CLIP, 'sansevieria.jpg', 24)],
     createdAt: '2025-11-08T13:10:00.000Z',
     updatedAt: '2026-09-01T08:12:00.000Z',
   },
@@ -153,7 +159,7 @@ export const seedPlants: Plant[] = [
       photo('sen-3', 'echeveria-pot.jpg'),
       photo('sen-4', 'echeveria-mix.jpg'),
     ],
-    videos: [video('sen-v1', PLANT_CLIP, 'collection.jpg', 16)],
+    videos: [video('sen-v1', FLOWER_CLIP, 'collection.jpg', 16)],
     createdAt: '2026-02-28T15:55:00.000Z',
     updatedAt: '2026-07-30T10:10:00.000Z',
   },
@@ -183,7 +189,7 @@ export const seedPlants: Plant[] = [
       photo('lua-2', 'echeveria-mix.jpg'),
       photo('lua-3', 'collection.jpg'),
     ],
-    videos: [video('lua-v1', LEAF_CLIP, 'echeveria-pot.jpg', 21)],
+    videos: [video('lua-v1', FLOWER_CLIP, 'echeveria-pot.jpg', 21)],
     createdAt: '2026-07-14T08:40:00.000Z',
     updatedAt: '2026-09-05T19:18:00.000Z',
   },

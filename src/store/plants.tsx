@@ -1,5 +1,5 @@
 import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
-import { seedPlants } from '../data/seed'
+import { relocateMockVideoUrl, seedPlants } from '../data/seed'
 import { nowIso } from '../lib/dates'
 import { createId } from '../lib/id'
 import { isHttpUrl } from '../lib/media'
@@ -21,6 +21,7 @@ function normalizePlants(plants: Plant[]): Plant[] {
     })),
     videos: plant.videos.map((video) => ({
       ...video,
+      url: relocateMockVideoUrl(video.url),
       posterUrl: relocateMockAsset(video.posterUrl),
     })),
   }))
