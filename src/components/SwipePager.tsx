@@ -71,14 +71,24 @@ export function SwipePager({
     const node = viewportRef.current
     if (!node) return
     const measure = () => {
-      widthRef.current = Math.max(node.clientWidth, 1)
-      layoutSlides(widthRef.current)
-      if (!dragRef.current) applyTx(-indexRef.current * widthRef.current, false)
+      const width = node.clientWidth
+      if (width < 8) return
+      widthRef.current = width
+      layoutSlides(width)
+      if (!dragRef.current) applyTx(-indexRef.current * width, false)
     }
     measure()
+    const frame = requestAnimationFrame(measure)
     const observer = new ResizeObserver(measure)
     observer.observe(node)
-    return () => observer.disconnect()
+    window.addEventListener('resize', measure)
+    window.visualViewport?.addEventListener('resize', measure)
+    return () => {
+      cancelAnimationFrame(frame)
+      observer.disconnect()
+      window.removeEventListener('resize', measure)
+      window.visualViewport?.removeEventListener('resize', measure)
+    }
   }, [count])
 
   useEffect(() => {
