@@ -3,8 +3,10 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import logoTextInk from '../assets/logo-text-ink.png'
 import logoTextLight from '../assets/logo-text.png'
 import identifyMark from '../assets/identify-mark.png'
-import { APP_VERSION } from '../lib/version'
+import { fetchStorageUsage, formatStorageUsed } from '../lib/plantsApi'
 import { usePlantSearch } from '../lib/search'
+import { APP_VERSION } from '../lib/version'
+import { usePlants } from '../store/plants'
 import { useTheme, type Theme } from '../store/theme'
 import { IdentifyPicker } from './IdentifyPicker'
 import { BackIcon, GridIcon, MenuIcon, PlusIcon, VideosIcon } from './Icons'
@@ -71,6 +73,7 @@ type MenuDrawerProps = {
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { theme, setTheme } = useTheme()
+  const [usageLabel, setUsageLabel] = useState('…')
 
   useEffect(() => {
     if (!open) return
@@ -80,6 +83,21 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    void fetchStorageUsage()
+      .then((usage) => {
+        if (!cancelled) setUsageLabel(formatStorageUsed(usage.usedBytes))
+      })
+      .catch(() => {
+        if (!cancelled) setUsageLabel('—')
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const choose = (next: Theme) => {
     setTheme(next)
@@ -112,6 +130,29 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </button>
         </div>
         <div className="menu-drawer__end">
+          <section className="menu-section" aria-labelledby="menu-instructions">
+            <h3 id="menu-instructions">Instruções</h3>
+            <div className="menu-instructions">
+              <p>
+                O aplicativo foi preparado para suportar até 10GB de fotos e videos. Até agora você
+                usou:
+                <br />
+                <strong>{usageLabel}</strong>.
+              </p>
+              <p>
+                Esse app Echevia é de uso pessoal. Se você passar esse aplicativo para outra pessoa,
+                ela poderá incluir, alterar e até excluir suas plantas. Isso é de inteira
+                responsabilidade sua. Portanto, se quiser compartilhar o app com alguém, entre em
+                contato com o desenvolvedor para apresentar uma solução.
+              </p>
+              <p>
+                Você pode acessar esse app em mais de um dispositivo (celular, tablet ou computador).
+                O armazenamento será compartilhado em núvem. Não adicione material protegido por lei
+                ou de terceiros sem autorização. Em caso de problemas jurídicos, o desenvolvedor do
+                app Echevia se isenta de culpa.
+              </p>
+            </div>
+          </section>
           <section className="menu-section" aria-labelledby="menu-legal">
             <h3 id="menu-legal">LEGAL</h3>
             <nav className="menu-legal">
@@ -170,13 +211,14 @@ export function SearchBar() {
 
 export function BottomNav() {
   const location = useLocation()
+  const { refreshPlants } = usePlants()
   const [pickerOpen, setPickerOpen] = useState(false)
   const identifyActive = location.pathname === '/identificar'
 
   return (
     <>
       <nav className="bottom-nav" aria-label="Principal">
-        <NavLink to="/" end aria-label="Galeria">
+        <NavLink to="/" end aria-label="Galeria" onClick={() => void refreshPlants()}>
           <GridIcon />
         </NavLink>
         <button
@@ -188,7 +230,7 @@ export function BottomNav() {
         >
           <img className="bottom-nav__identify-mark" src={identifyMark} alt="" />
         </button>
-        <NavLink to="/videos" aria-label="Vídeos">
+        <NavLink to="/videos" aria-label="Vídeos" onClick={() => void refreshPlants()}>
           <VideosIcon />
         </NavLink>
       </nav>

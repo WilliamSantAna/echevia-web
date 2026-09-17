@@ -16,7 +16,7 @@ export function GalleryPage() {
         emptyTitle={query ? 'Nenhum resultado' : 'Sua coleção está vazia'}
         emptyText={
           query
-            ? 'Tente outro nome, espécie ou identificação.'
+            ? 'Tente outro nome.'
             : 'Toque em Nova para fotografar a primeira suculenta.'
         }
       />

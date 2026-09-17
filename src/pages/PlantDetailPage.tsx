@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { PhotoCarousel } from '../components/PhotoCarousel'
+import { PlantVideoPlayer } from '../components/PlantVideoPlayer'
 import { HeartIcon, PencilIcon, ShareIcon, TrashIcon } from '../components/Icons'
 import { formatDate } from '../lib/dates'
 import { sharePlant } from '../lib/share'
@@ -8,10 +9,20 @@ import { usePlants } from '../store/plants'
 
 export function PlantDetailPage() {
   const { id = '' } = useParams()
+  const [params] = useSearchParams()
   const { getById, toggleFavorite, removePlant } = usePlants()
   const plant = getById(id)
   const navigate = useNavigate()
-  const [active, setActive] = useState(0)
+  const photos = plant?.photos ?? []
+  const videos = plant?.videos ?? []
+  const videoMode =
+    params.get('midia') === 'video' || (photos.length === 0 && videos.length > 0)
+  const mediaKey = `${id}:${videoMode ? 'video' : 'photo'}`
+  const [activeByKey, setActiveByKey] = useState<Record<string, number>>({})
+  const active = activeByKey[mediaKey] ?? 0
+  const setActive = (index: number) => {
+    setActiveByKey((current) => ({ ...current, [mediaKey]: index }))
+  }
   const [toast, setToast] = useState('')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
@@ -24,29 +35,38 @@ export function PlantDetailPage() {
     )
   }
 
-  const photos = plant.photos
-
   return (
     <article className="plant-page">
-      <PhotoCarousel
-        photos={photos}
-        plantName={plant.name}
-        active={active}
-        onActiveChange={setActive}
-      />
+      {videoMode && videos.length > 0 ? (
+        <PlantVideoPlayer
+          videos={videos}
+          plantName={plant.name}
+          active={active}
+          onActiveChange={setActive}
+        />
+      ) : (
+        <PhotoCarousel
+          photos={photos}
+          plantName={plant.name}
+          active={active}
+          onActiveChange={setActive}
+        />
+      )}
       <div className="plant-body">
         <div className="plant-kicker">{plant.identification}</div>
         <div className="plant-heading">
           <h1>{plant.name}</h1>
           <div className="plant-heading__actions">
-            <button
-              type="button"
-              className={`icon-btn icon-btn-heart${plant.favorite ? ' is-fav' : ''}`}
-              aria-label={plant.favorite ? 'Remover dos favoritos' : 'Favoritar'}
-              onClick={() => toggleFavorite(plant.id)}
-            >
-              <HeartIcon filled={plant.favorite} />
-            </button>
+            {videoMode ? null : (
+              <button
+                type="button"
+                className={`icon-btn icon-btn-heart${plant.favorite ? ' is-fav' : ''}`}
+                aria-label={plant.favorite ? 'Remover dos favoritos' : 'Favoritar'}
+                onClick={() => toggleFavorite(plant.id)}
+              >
+                <HeartIcon filled={plant.favorite} />
+              </button>
+            )}
             <button
               type="button"
               className="icon-btn icon-btn-danger"

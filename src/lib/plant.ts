@@ -11,8 +11,5 @@ export function mainPhoto(plant: Plant): string | undefined {
 export function plantMatchesQuery(plant: Plant, query: string): boolean {
   const q = query.trim().toLowerCase()
   if (!q) return true
-  return [plant.name, plant.species, plant.botanicalFamily, plant.identification, plant.notes]
-    .join(' ')
-    .toLowerCase()
-    .includes(q)
+  return plant.name.toLowerCase().includes(q)
 }

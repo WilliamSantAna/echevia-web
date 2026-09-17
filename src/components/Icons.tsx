@@ -135,3 +135,19 @@ export function MuteIcon({ className = 'icon', muted = true }: IconProps & { mut
     </svg>
   )
 }
+
+export function PlayIcon({ className = 'icon' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 6.5v11L18 12 8 6.5Z" />
+    </svg>
+  )
+}
+
+export function PauseIcon({ className = 'icon' }: IconProps) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M8 6v12M16 6v12" />
+    </svg>
+  )
+}

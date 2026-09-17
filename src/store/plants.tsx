@@ -1,4 +1,13 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
 import { relocateMockVideoUrl, seedPlants } from '../data/seed'
 import { nowIso } from '../lib/dates'
 import { createId } from '../lib/id'
@@ -61,6 +70,23 @@ function persist(plants: Plant[]) {
   }
 }
 
+function plantsSignature(plants: Plant[]): string {
+  return JSON.stringify(
+    plants.map((plant) => ({
+      id: plant.id,
+      name: plant.name,
+      species: plant.species,
+      botanicalFamily: plant.botanicalFamily,
+      identification: plant.identification,
+      notes: plant.notes,
+      favorite: plant.favorite,
+      updatedAt: plant.updatedAt,
+      photos: plant.photos.map((photo) => [photo.id, photo.url, photo.isMain]),
+      videos: plant.videos.map((video) => [video.id, video.url, video.posterUrl]),
+    })),
+  )
+}
+
 type PlantsContextValue = {
   plants: Plant[]
   photoCount: number
@@ -71,12 +97,31 @@ type PlantsContextValue = {
   toggleFavorite: (id: string) => void
   savePlant: (draft: PlantDraft, id?: string) => Promise<Plant>
   removePlant: (id: string) => void
+  refreshPlants: () => Promise<void>
 }
 
 const PlantsContext = createContext<PlantsContextValue | null>(null)
 
 export function PlantsProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>(loadPlants)
+  const refreshGen = useRef(0)
+
+  const refreshPlants = useCallback(async () => {
+    const gen = ++refreshGen.current
+    try {
+      const remote = await fetchPlants()
+      if (gen !== refreshGen.current) return
+      if (remote.length === 0) return
+      const next = normalizePlants(remote)
+      setPlants((current) => {
+        if (plantsSignature(current) === plantsSignature(next)) return current
+        persist(next)
+        return next
+      })
+    } catch {
+      // Keep the local cache when the API is unreachable.
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -212,8 +257,9 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
           write(() => snapshot)
         })
       },
+      refreshPlants,
     }
-  }, [plants])
+  }, [plants, refreshPlants])
 
   return <PlantsContext.Provider value={value}>{children}</PlantsContext.Provider>
 }

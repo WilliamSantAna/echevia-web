@@ -100,6 +100,37 @@ export async function patchFavorite(id: string, favorite: boolean): Promise<Plan
   return parseJson<Plant>(response, 'Não foi possível atualizar o favorito.')
 }
 
+export type StorageUsage = {
+  usedBytes: number
+  limitBytes: number
+}
+
+export function formatStorageUsed(usedBytes: number): string {
+  const mb = usedBytes / (1024 * 1024)
+  const amount =
+    mb < 1
+      ? mb.toLocaleString('pt-BR', { maximumFractionDigits: 1 })
+      : Math.round(mb).toLocaleString('pt-BR')
+  return `${amount} MB de 10GB`
+}
+
+export async function fetchStorageUsage(): Promise<StorageUsage> {
+  let response: Response
+  try {
+    response = await fetch(apiUrl('/api/storage'), { headers: { Accept: 'application/json' } })
+  } catch {
+    throw new ApiError('Não foi possível consultar o armazenamento.')
+  }
+  const payload = await parseJson<Partial<StorageUsage>>(
+    response,
+    'Não foi possível consultar o armazenamento.',
+  )
+  return {
+    usedBytes: typeof payload.usedBytes === 'number' ? payload.usedBytes : 0,
+    limitBytes: typeof payload.limitBytes === 'number' ? payload.limitBytes : 10 * 1024 * 1024 * 1024,
+  }
+}
+
 export async function uploadMedia(file: File, kind: 'photo' | 'video'): Promise<{ url: string; key: string }> {
   const body = new FormData()
   body.append('file', file)

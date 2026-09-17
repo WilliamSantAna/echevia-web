@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import { mainPhoto } from '../lib/plant'
 import type { Plant } from '../types/plant'
-import { HeartIcon } from './Icons'
 import { ProtectedPhoto } from './ProtectedPhoto'
 
 type PhotoGridProps = {
@@ -13,22 +12,33 @@ type PhotoGridProps = {
 type Tile = {
   key: string
   plant: Plant
-  src: string
+  src?: string
   alt: string
+  kind: 'photo' | 'video'
 }
 
 export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
   const tiles: Tile[] = plants.flatMap((plant) => {
-    const src = mainPhoto(plant)
-    if (!src) return []
-    return [
-      {
-        key: plant.id,
-        plant,
-        src,
-        alt: plant.name,
-      },
-    ]
+    const photoSrc = mainPhoto(plant)
+    const photoTiles: Tile[] = photoSrc
+      ? [
+          {
+            key: `photo-${plant.id}`,
+            plant,
+            src: photoSrc,
+            alt: plant.name,
+            kind: 'photo',
+          },
+        ]
+      : []
+    const videoTiles: Tile[] = plant.videos.map((video) => ({
+      key: `video-${video.id}`,
+      plant,
+      src: video.posterUrl || undefined,
+      alt: `Vídeo de ${plant.name}`,
+      kind: 'video',
+    }))
+    return [...photoTiles, ...videoTiles]
   })
 
   if (tiles.length === 0) {
@@ -43,13 +53,16 @@ export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
   return (
     <section className="photo-grid">
       {tiles.map((tile) => (
-        <Link key={tile.key} className="photo-tile" to={`/plantas/${tile.plant.id}`}>
-          <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} />
-          {tile.plant.favorite ? (
-            <span className="photo-tile__fav">
-              <HeartIcon filled />
-            </span>
-          ) : null}
+        <Link
+          key={tile.key}
+          className={`photo-tile${tile.kind === 'video' ? ' is-video' : ''}`}
+          to={tile.kind === 'video' ? `/plantas/${tile.plant.id}?midia=video` : `/plantas/${tile.plant.id}`}
+        >
+          {tile.src ? (
+            <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} />
+          ) : (
+            <span className="photo-tile__fallback" aria-hidden="true" />
+          )}
         </Link>
       ))}
     </section>
