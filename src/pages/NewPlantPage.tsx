@@ -23,8 +23,8 @@ export function NewPlantPage() {
       mediaMode={mediaMode}
       prefill={prefill}
       identificationTaken={identificationTaken}
-      onSubmit={(draft) => {
-        const plant = savePlant(draft)
+      onSubmit={async (draft) => {
+        const plant = await savePlant(draft)
         if (mediaMode === 'video') {
           navigate('/videos', { replace: true })
           return

@@ -13,7 +13,7 @@ type PlantFormProps = {
   prefill?: IdentifyPrefill
   mediaMode?: MediaMode
   identificationTaken: (identification: string, ignoreId?: string) => boolean
-  onSubmit: (draft: PlantDraft) => void
+  onSubmit: (draft: PlantDraft) => void | Promise<void>
 }
 
 export function PlantForm({
@@ -26,6 +26,7 @@ export function PlantForm({
   const cameraRef = useRef<HTMLInputElement>(null)
   const galleryRef = useRef<HTMLInputElement>(null)
   const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
   const [pickerOpen, setPickerOpen] = useState(false)
   const [name, setName] = useState(initial?.name ?? prefill?.name ?? '')
   const [species, setSpecies] = useState(initial?.species ?? prefill?.species ?? '')
@@ -104,8 +105,9 @@ export function PlantForm({
     if (allowVideo) await addVideo(all.find((file) => file.type.startsWith('video/')))
   }
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault()
+    if (saving) return
     const idValue = slugifyIdentification(identification)
     if (!name.trim()) {
       setError('Informe o nome da planta.')
@@ -140,19 +142,28 @@ export function PlantForm({
               url: videoUrl,
               posterUrl: videoPoster || photos.find((photo) => photo.isMain)?.url || photos[0]?.url || '',
               durationSeconds: videoDuration || MAX_VIDEO_SECONDS,
+              key: initial?.videos[0]?.key,
+              posterKey: initial?.videos[0]?.posterKey,
             },
           ]
         : []
 
-    onSubmit({
-      name: name.trim(),
-      species: species.trim(),
-      botanicalFamily: botanicalFamily.trim(),
-      identification: idValue,
-      notes: notes.trim(),
-      photos: allowPhotos ? photos : [],
-      videos,
-    })
+    setSaving(true)
+    try {
+      await onSubmit({
+        name: name.trim(),
+        species: species.trim(),
+        botanicalFamily: botanicalFamily.trim(),
+        identification: idValue,
+        notes: notes.trim(),
+        photos: allowPhotos ? photos : initial?.photos ?? [],
+        videos: allowVideo ? videos : initial?.videos ?? [],
+      })
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Não foi possível salvar a planta.')
+    } finally {
+      setSaving(false)
+    }
   }
 
   const cameraAccept = allowVideo && !allowPhotos ? 'video/*' : allowPhotos && !allowVideo ? 'image/*' : 'image/*,video/*'
@@ -161,7 +172,7 @@ export function PlantForm({
 
   return (
     <form className="form" onSubmit={handleSubmit}>
-      <button type="submit" className="btn btn-primary form-save">
+      <button type="submit" className="btn btn-primary form-save" disabled={saving}>
         Salvar planta
       </button>
       {error ? <p className="form-error">{error}</p> : null}

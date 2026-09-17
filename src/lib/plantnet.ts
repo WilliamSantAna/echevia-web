@@ -1,4 +1,6 @@
-const PLANTNET_IDENTIFY = `${(import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '')}/api/identify`
+import { apiUrl } from './api'
+
+const PLANTNET_IDENTIFY = apiUrl('/api/identify')
 
 export type PlantNetMatch = {
   score: number

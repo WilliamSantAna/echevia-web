@@ -2,6 +2,7 @@ export type PlantPhoto = {
   id: string
   url: string
   isMain: boolean
+  key?: string | null
 }
 
 export type PlantVideo = {
@@ -9,6 +10,8 @@ export type PlantVideo = {
   url: string
   posterUrl: string
   durationSeconds: number
+  key?: string | null
+  posterKey?: string | null
 }
 
 export type Plant = {

@@ -20,8 +20,8 @@ export function EditPlantPage() {
     <PlantForm
       initial={plant}
       identificationTaken={identificationTaken}
-      onSubmit={(draft) => {
-        savePlant(draft, plant.id)
+      onSubmit={async (draft) => {
+        await savePlant(draft, plant.id)
         navigate(`/plantas/${plant.id}`, { replace: true })
       }}
     />

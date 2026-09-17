@@ -941,6 +941,11 @@ img {
   cursor: pointer;
 }
 
+.btn:disabled {
+  cursor: default;
+  opacity: 1;
+}
+
 .btn .icon {
   width: 18px;
   height: 18px;

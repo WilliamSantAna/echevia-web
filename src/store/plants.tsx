@@ -1,8 +1,16 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { relocateMockVideoUrl, seedPlants } from '../data/seed'
 import { nowIso } from '../lib/dates'
 import { createId } from '../lib/id'
 import { isHttpUrl } from '../lib/media'
+import {
+  createPlant,
+  deletePlant,
+  fetchPlants,
+  patchFavorite,
+  preparePlantMedia,
+  updatePlant,
+} from '../lib/plantsApi'
 import type { Plant, PlantDraft } from '../types/plant'
 
 const STORAGE_KEY = 'echevia.plants.v6'
@@ -49,7 +57,7 @@ function persist(plants: Plant[]) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(serializable))
   } catch {
-    // Storage quota is a mock-only constraint (photos as data URLs).
+    // Quota: cache is best-effort after media lives on R2.
   }
 }
 
@@ -61,7 +69,7 @@ type PlantsContextValue = {
   getByIdentification: (identification: string) => Plant | undefined
   identificationTaken: (identification: string, ignoreId?: string) => boolean
   toggleFavorite: (id: string) => void
-  savePlant: (draft: PlantDraft, id?: string) => Plant
+  savePlant: (draft: PlantDraft, id?: string) => Promise<Plant>
   removePlant: (id: string) => void
 }
 
@@ -69,6 +77,52 @@ const PlantsContext = createContext<PlantsContextValue | null>(null)
 
 export function PlantsProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>(loadPlants)
+
+  useEffect(() => {
+    let cancelled = false
+
+    void (async () => {
+      try {
+        const remote = await fetchPlants()
+        if (cancelled) return
+
+        if (remote.length > 0) {
+          const next = normalizePlants(remote)
+          setPlants(next)
+          persist(next)
+          return
+        }
+
+        const local = loadPlants()
+        if (local.length === 0) return
+
+        const migrated: Plant[] = []
+        for (const plant of local) {
+          const media = await preparePlantMedia(plant)
+          const payload: Plant = { ...plant, ...media }
+          try {
+            migrated.push(await createPlant(payload))
+          } catch {
+            try {
+              migrated.push(await updatePlant(payload))
+            } catch {
+              migrated.push(payload)
+            }
+          }
+        }
+        if (cancelled) return
+        const next = normalizePlants(migrated)
+        setPlants(next)
+        persist(next)
+      } catch {
+        // Keep the local cache when the API is unreachable.
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const value = useMemo<PlantsContextValue>(() => {
     const photoCount = plants.reduce((sum, plant) => sum + plant.photos.length, 0)
@@ -98,20 +152,27 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
             plant.identification.toLowerCase() === identification.toLowerCase(),
         ),
       toggleFavorite: (id) => {
-        write((current) =>
-          current.map((plant) =>
-            plant.id === id
-              ? { ...plant, favorite: !plant.favorite, updatedAt: nowIso() }
-              : plant,
+        const current = plants.find((plant) => plant.id === id)
+        if (!current) return
+        const favorite = !current.favorite
+        write((list) =>
+          list.map((plant) =>
+            plant.id === id ? { ...plant, favorite, updatedAt: nowIso() } : plant,
           ),
         )
+        void patchFavorite(id, favorite).catch(() => {
+          write((list) =>
+            list.map((plant) =>
+              plant.id === id ? { ...plant, favorite: current.favorite } : plant,
+            ),
+          )
+        })
       },
-      savePlant: (draft, id) => {
-        const photos = draft.photos.map((photo, index) => ({
+      savePlant: async (draft, id) => {
+        const media = await preparePlantMedia(draft)
+        const photos = media.photos.map((photo, index) => ({
           ...photo,
-          isMain: draft.photos.some((item) => item.isMain)
-            ? photo.isMain
-            : index === 0,
+          isMain: media.photos.some((item) => item.isMain) ? photo.isMain : index === 0,
         }))
 
         if (id) {
@@ -122,11 +183,13 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
           const saved: Plant = {
             ...existing,
             ...draft,
+            ...media,
             photos,
             updatedAt: nowIso(),
           }
-          write((current) => current.map((plant) => (plant.id === id ? saved : plant)))
-          return saved
+          const persisted = await updatePlant(saved)
+          write((current) => current.map((plant) => (plant.id === id ? persisted : plant)))
+          return persisted
         }
 
         const saved: Plant = {
@@ -135,13 +198,19 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
           createdAt: nowIso(),
           updatedAt: nowIso(),
           ...draft,
+          ...media,
           photos,
         }
-        write((current) => [saved, ...current])
-        return saved
+        const persisted = await createPlant(saved)
+        write((current) => [persisted, ...current])
+        return persisted
       },
       removePlant: (id) => {
+        const snapshot = plants
         write((current) => current.filter((plant) => plant.id !== id))
+        void deletePlant(id).catch(() => {
+          write(() => snapshot)
+        })
       },
     }
   }, [plants])
