@@ -11,15 +11,17 @@ import {
 import { relocateMockVideoUrl, withoutSeedPlants } from '../data/seed'
 import { nowIso } from '../lib/dates'
 import { createId } from '../lib/id'
-import { isHttpUrl } from '../lib/media'
+import { isHttpUrl, captureVideoPoster } from '../lib/media'
 import {
   createPlant,
   deletePlant,
   fetchPlants,
+  materializeMediaUrl,
   patchFavorite,
   preparePlantMedia,
   updatePlant,
 } from '../lib/plantsApi'
+import { isStoredPoster, readDevicePoster, writeDevicePoster } from '../lib/videoPoster'
 import type { Plant, PlantDraft } from '../types/plant'
 
 const STORAGE_KEY = 'echevia.plants.v6'
@@ -70,6 +72,29 @@ function persist(plants: Plant[]) {
   }
 }
 
+async function persistVideoPoster(video: Plant['videos'][number]): Promise<Plant['videos'][number] | null> {
+  if (isStoredPoster(video.posterUrl) && isHttpUrl(video.posterUrl)) return null
+
+  let poster = isStoredPoster(video.posterUrl) ? video.posterUrl : readDevicePoster(video.id)
+  if (!poster) {
+    poster = await captureVideoPoster(video.url)
+    if (poster) writeDevicePoster(video.id, poster)
+  }
+  if (!poster) return null
+  if (isHttpUrl(poster)) {
+    return poster === video.posterUrl ? null : { ...video, posterUrl: poster }
+  }
+
+  const remote = await materializeMediaUrl(poster, 'photo')
+  if (!remote.url) return null
+  writeDevicePoster(video.id, remote.url)
+  return {
+    ...video,
+    posterUrl: remote.url,
+    posterKey: remote.key ?? video.posterKey ?? null,
+  }
+}
+
 function plantsSignature(plants: Plant[]): string {
   return JSON.stringify(
     plants.map((plant) => ({
@@ -105,6 +130,7 @@ const PlantsContext = createContext<PlantsContextValue | null>(null)
 export function PlantsProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>(loadPlants)
   const refreshGen = useRef(0)
+  const posterJobs = useRef(new Set<string>())
 
   const refreshPlants = useCallback(async () => {
     const gen = ++refreshGen.current
@@ -142,6 +168,66 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    const missing = plants.flatMap((plant) =>
+      plant.videos
+        .filter((video) => !(isStoredPoster(video.posterUrl) && isHttpUrl(video.posterUrl)))
+        .map((video) => video.id),
+    )
+    const pending = missing.filter((id) => !posterJobs.current.has(id))
+    if (pending.length === 0) return
+
+    void (async () => {
+      const replacements = new Map<string, Plant>()
+      for (const plant of plants) {
+        if (cancelled) return
+        let changed = false
+        const videos = []
+        for (const video of plant.videos) {
+          if (isStoredPoster(video.posterUrl) && isHttpUrl(video.posterUrl)) {
+            videos.push(video)
+            continue
+          }
+          if (posterJobs.current.has(video.id)) {
+            videos.push(video)
+            continue
+          }
+          posterJobs.current.add(video.id)
+          try {
+            const nextVideo = await persistVideoPoster(video)
+            if (nextVideo) {
+              videos.push(nextVideo)
+              changed = true
+            } else {
+              videos.push(video)
+            }
+          } catch {
+            posterJobs.current.delete(video.id)
+            videos.push(video)
+          }
+        }
+        if (!changed) continue
+        const draft: Plant = { ...plant, videos, updatedAt: nowIso() }
+        try {
+          replacements.set(plant.id, await updatePlant(draft))
+        } catch {
+          replacements.set(plant.id, draft)
+        }
+      }
+      if (cancelled || replacements.size === 0) return
+      setPlants((current) => {
+        const next = current.map((plant) => replacements.get(plant.id) ?? plant)
+        persist(next)
+        return next
+      })
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [plants])
 
   const value = useMemo<PlantsContextValue>(() => {
     const photoCount = plants.reduce((sum, plant) => sum + plant.photos.length, 0)

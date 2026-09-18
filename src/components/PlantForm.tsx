@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { assertShortVideo, captureVideoPoster, compressImage } from '../lib/media'
 import { createId, slugifyIdentification } from '../lib/id'
+import { writeDevicePoster } from '../lib/videoPoster'
 import { MAX_PHOTOS, MAX_VIDEO_SECONDS, type Plant, type PlantDraft, type PlantPhoto } from '../types/plant'
 import { CameraIcon, StarIcon } from './Icons'
 import { ProtectedPhoto } from './ProtectedPhoto'
@@ -148,6 +149,7 @@ export function PlantForm({
             },
           ]
         : []
+    if (videos[0] && videoPoster) writeDevicePoster(videos[0].id, videoPoster)
 
     setSaving(true)
     try {

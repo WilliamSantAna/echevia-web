@@ -8,6 +8,8 @@ const pages: Record<LegalSlug, { title: string; body: string[] }> = {
     title: 'Termos de uso',
     body: [
       'A Echevia é um aplicativo para organizar uma coleção pessoal de suculentas, com fotos, vídeos e anotações. Ao usar o app, você concorda com estes termos.',
+      'Esse app Echevia é de uso pessoal. Se você passar esse aplicativo para outra pessoa, ela poderá incluir, alterar e até excluir suas plantas. Isso é de inteira responsabilidade sua. Portanto, se quiser compartilhar o app com alguém, entre em contato com o desenvolvedor para apresentar uma solução.',
+      'Você pode acessar esse app em mais de um dispositivo (celular, tablet ou computador). O armazenamento será compartilhado em núvem. Não adicione material protegido por lei ou de terceiros sem autorização. Em caso de problemas jurídicos, o desenvolvedor do app Echevia se isenta de culpa.',
       'A versão atual é um cliente web (PWA). Os dados da coleção ficam neste dispositivo, salvo quando uma API própria for disponibilizada.',
       'Você é responsável pelo conteúdo que cadastra, inclusive fotos e vídeos. Não use o app para armazenar material ilícito ou de terceiros sem autorização.',
       'O software é oferecido “como está”, sem garantia de disponibilidade contínua, de precisão botânica ou de adequação a um fim específico.',

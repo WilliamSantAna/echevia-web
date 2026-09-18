@@ -117,7 +117,13 @@ export function PlantVideoPlayer({
             />
             {index === active && started ? null : (
               <div className="plant-video__still">
-                <VideoStill className="is-fill" src={video.url} alt="" />
+                <VideoStill
+                  className="is-fill"
+                  src={video.url}
+                  videoId={video.id}
+                  poster={video.posterUrl}
+                  alt=""
+                />
               </div>
             )}
           </div>

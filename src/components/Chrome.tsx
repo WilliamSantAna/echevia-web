@@ -73,6 +73,7 @@ type MenuDrawerProps = {
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { theme, setTheme } = useTheme()
+  const [usage, setUsage] = useState<{ usedBytes: number; limitBytes: number } | null>(null)
   const [usageLabel, setUsageLabel] = useState('…')
 
   useEffect(() => {
@@ -88,11 +89,15 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
     if (!open) return
     let cancelled = false
     void fetchStorageUsage()
-      .then((usage) => {
-        if (!cancelled) setUsageLabel(formatStorageUsed(usage.usedBytes))
+      .then((snapshot) => {
+        if (cancelled) return
+        setUsage(snapshot)
+        setUsageLabel(formatStorageUsed(snapshot.usedBytes))
       })
       .catch(() => {
-        if (!cancelled) setUsageLabel('—')
+        if (cancelled) return
+        setUsage(null)
+        setUsageLabel('—')
       })
     return () => {
       cancelled = true
@@ -102,6 +107,10 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const choose = (next: Theme) => {
     setTheme(next)
   }
+
+  const usageRatio = usage ? usage.usedBytes / Math.max(usage.limitBytes, 1) : 0
+  const usagePercent = Math.min(100, usageRatio * 100)
+  const usageTone = usageRatio >= 0.9 ? ' is-alert' : usageRatio >= 0.8 ? ' is-warn' : ''
 
   return (
     <div className={`menu-drawer${open ? ' is-open' : ''}`} aria-hidden={!open}>
@@ -130,27 +139,37 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </button>
         </div>
         <div className="menu-drawer__end">
-          <section className="menu-section" aria-labelledby="menu-instructions">
-            <h3 id="menu-instructions">Instruções</h3>
+          <section className="menu-section" aria-labelledby="menu-data">
+            <h3 id="menu-data">DADOS</h3>
             <div className="menu-instructions">
               <p>
-                O aplicativo foi preparado para suportar até 10GB de fotos e videos. Até agora você
-                usou:
+                O aplicativo foi preparado para suportar até 10GB de fotos e videos. Caso o espaço
+                seja consumido, você precisa excluir dados. Não é possivel estender este espaço
+                gratuitamente.
+              </p>
+              <p>
+                Até agora você usou:
                 <br />
                 <strong>{usageLabel}</strong>.
               </p>
-              <p>
-                Esse app Echevia é de uso pessoal. Se você passar esse aplicativo para outra pessoa,
-                ela poderá incluir, alterar e até excluir suas plantas. Isso é de inteira
-                responsabilidade sua. Portanto, se quiser compartilhar o app com alguém, entre em
-                contato com o desenvolvedor para apresentar uma solução.
-              </p>
-              <p>
-                Você pode acessar esse app em mais de um dispositivo (celular, tablet ou computador).
-                O armazenamento será compartilhado em núvem. Não adicione material protegido por lei
-                ou de terceiros sem autorização. Em caso de problemas jurídicos, o desenvolvedor do
-                app Echevia se isenta de culpa.
-              </p>
+              {usage ? (
+                <div
+                  className="menu-usage"
+                  role="progressbar"
+                  aria-label="Consumo de armazenamento"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={Math.round(usagePercent)}
+                >
+                  <span
+                    className={`menu-usage__fill${usageTone}`}
+                    style={{
+                      width:
+                        usage.usedBytes > 0 ? `max(6px, ${usagePercent}%)` : '0%',
+                    }}
+                  />
+                </div>
+              ) : null}
             </div>
           </section>
           <section className="menu-section" aria-labelledby="menu-legal">
