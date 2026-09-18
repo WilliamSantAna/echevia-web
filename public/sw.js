@@ -1,4 +1,4 @@
-const CACHE = 'echevia-v8'
+const CACHE = 'echevia-v9'
 const BASE = self.location.pathname.replace(/sw\.js$/, '')
 const PRECACHE = [BASE, `${BASE}index.html`, `${BASE}manifest.webmanifest`, `${BASE}favicon.png`]
 

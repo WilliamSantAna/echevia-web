@@ -1,13 +1,9 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react'
 
-const PARTY_KEY = 'echevia.egg.party'
-
-function readParty(): boolean {
-  try {
-    return sessionStorage.getItem(PARTY_KEY) === '1'
-  } catch {
-    return false
-  }
+try {
+  sessionStorage.removeItem('echevia.egg.party')
+} catch {
+  // Ignore: party must not persist across reload.
 }
 
 function applyParty(on: boolean) {
@@ -39,22 +35,13 @@ export function isMoonCactusName(name?: string | null): boolean {
 }
 
 export function EasterProvider({ children }: { children: ReactNode }) {
-  const [party, setParty] = useState(() => {
-    const initial = readParty()
-    if (initial) applyParty(true)
-    return initial
-  })
+  const [party, setParty] = useState(false)
   const [rolling, setRolling] = useState(false)
   const [celebrating, setCelebrating] = useState(false)
 
   const activateParty = useCallback(() => {
     applyParty(true)
     setParty(true)
-    try {
-      sessionStorage.setItem(PARTY_KEY, '1')
-    } catch {
-      // Session-only: ignore quota.
-    }
   }, [])
 
   const barrelRoll = useCallback(() => {
