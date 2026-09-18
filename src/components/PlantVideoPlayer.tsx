@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { PlantVideo } from '../types/plant'
 import { MuteIcon, PauseIcon, PlayIcon } from './Icons'
 import { SwipePager } from './SwipePager'
+import { VideoStill } from './VideoStill'
 
 type PlantVideoPlayerProps = {
   videos: PlantVideo[]
@@ -25,17 +26,24 @@ export function PlantVideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const [playing, setPlaying] = useState(false)
+  const [started, setStarted] = useState(false)
   const [muted, setMuted] = useState(true)
   const mutedRef = useRef(muted)
   mutedRef.current = muted
   const canSlide = videos.length >= 2
 
   useEffect(() => {
+    setPlaying(false)
+    setStarted(false)
     const wrap = wrapRef.current
     if (!wrap) return
-    for (const node of wrap.querySelectorAll('video')) {
+    for (const node of wrap.querySelectorAll<HTMLVideoElement>('video.plant-video__media')) {
       node.pause()
-      node.currentTime = 0
+      try {
+        node.currentTime = 0.1
+      } catch {
+        node.currentTime = 0
+      }
       applyMute(node, mutedRef.current)
     }
   }, [active])
@@ -70,24 +78,48 @@ export function PlantVideoPlayer({
           <div key={video.id} className="swipe-pager__slide plant-video__slide">
             <video
               ref={index === active ? videoRef : undefined}
+              className="plant-video__media"
               src={video.url}
-              poster={video.posterUrl || undefined}
               muted={muted}
               playsInline
-              preload="metadata"
+              preload="auto"
               onContextMenu={(event) => event.preventDefault()}
               controlsList="nodownload noplaybackrate"
               disablePictureInPicture
+              onLoadedData={(event) => {
+                const node = event.currentTarget
+                if (node.currentTime >= 0.04) return
+                try {
+                  const duration = node.duration
+                  node.currentTime =
+                    Number.isFinite(duration) && duration > 0
+                      ? Math.min(0.12, Math.max(0.04, duration * 0.02))
+                      : 0.1
+                } catch {
+                  // Seek may fail until the video is ready.
+                }
+              }}
               onPlay={() => {
-                if (index === active) setPlaying(true)
+                if (index === active) {
+                  setPlaying(true)
+                  setStarted(true)
+                }
               }}
               onPause={() => {
                 if (index === active) setPlaying(false)
               }}
               onEnded={() => {
-                if (index === active) setPlaying(false)
+                if (index === active) {
+                  setPlaying(false)
+                  setStarted(false)
+                }
               }}
             />
+            {index === active && started ? null : (
+              <div className="plant-video__still">
+                <VideoStill className="is-fill" src={video.url} alt="" />
+              </div>
+            )}
           </div>
         ))}
       </SwipePager>

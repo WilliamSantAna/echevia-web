@@ -35,6 +35,8 @@ export function relocateMockVideoUrl(url: string): string {
   return url
 }
 
+export const SHOW_SEED_PLANTS = false
+
 export const seedPlants: Plant[] = [
   {
     id: 'plant-lola',
@@ -228,3 +230,19 @@ export const seedPlants: Plant[] = [
     updatedAt: '2026-09-12T16:44:00.000Z',
   },
 ]
+
+const seedIds = new Set(seedPlants.map((plant) => plant.id))
+
+export function isSeedPlant(plant: Plant): boolean {
+  if (seedIds.has(plant.id)) return true
+  const urls = [
+    ...plant.photos.map((photo) => photo.url),
+    ...plant.videos.flatMap((video) => [video.url, video.posterUrl]),
+  ]
+  return urls.some((url) => url.includes('/mock/'))
+}
+
+export function withoutSeedPlants(plants: Plant[]): Plant[] {
+  if (SHOW_SEED_PLANTS) return plants
+  return plants.filter((plant) => !isSeedPlant(plant))
+}

@@ -84,6 +84,85 @@ export function isHttpUrl(url: string): boolean {
   return url.startsWith('http://') || url.startsWith('https://')
 }
 
+const posterCache = new Map<string, Promise<string>>()
+
+function snapshotVideoFrame(video: HTMLVideoElement): string {
+  if (video.videoWidth < 2 || video.videoHeight < 2) return ''
+  const max = 1400
+  const scale = Math.min(1, max / Math.max(video.videoWidth, video.videoHeight))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.max(1, Math.round(video.videoWidth * scale))
+  canvas.height = Math.max(1, Math.round(video.videoHeight * scale))
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return ''
+  ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
+  return canvas.toDataURL('image/jpeg', 0.82)
+}
+
+function firstFrameTime(video: HTMLVideoElement): number {
+  const duration = video.duration
+  if (Number.isFinite(duration) && duration > 0) {
+    return Math.min(0.12, Math.max(0.04, duration * 0.02))
+  }
+  return 0.1
+}
+
+export function captureVideoPoster(src: string): Promise<string> {
+  const cached = posterCache.get(src)
+  if (cached) return cached
+
+  const pending = new Promise<string>((resolve) => {
+    const video = document.createElement('video')
+    let settled = false
+    const finish = (url: string) => {
+      if (settled) return
+      settled = true
+      window.clearTimeout(timer)
+      video.removeAttribute('src')
+      video.load()
+      resolve(url)
+    }
+
+    const timer = window.setTimeout(() => finish(''), 8000)
+    video.muted = true
+    video.defaultMuted = true
+    video.playsInline = true
+    video.preload = 'auto'
+    video.setAttribute('playsinline', 'true')
+    video.setAttribute('webkit-playsinline', 'true')
+    if (src.startsWith('http://') || src.startsWith('https://')) {
+      video.crossOrigin = 'anonymous'
+    }
+
+    const snap = () => {
+      try {
+        const url = snapshotVideoFrame(video)
+        if (url) finish(url)
+      } catch {
+        finish('')
+      }
+    }
+
+    video.addEventListener('seeked', snap)
+    video.addEventListener('loadeddata', () => {
+      try {
+        video.currentTime = firstFrameTime(video)
+      } catch {
+        snap()
+      }
+    })
+    video.addEventListener('error', () => finish(''))
+    video.src = src
+    video.load()
+  }).then((url) => {
+    if (!url) posterCache.delete(src)
+    return url
+  })
+
+  posterCache.set(src, pending)
+  return pending
+}
+
 export function dataUrlToFile(dataUrl: string, filename = 'planta.jpg'): File {
   const [header, encoded = ''] = dataUrl.split(',')
   const mime = /data:(.*?);/.exec(header)?.[1] ?? 'image/jpeg'

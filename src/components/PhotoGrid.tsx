@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { mainPhoto } from '../lib/plant'
 import type { Plant } from '../types/plant'
 import { ProtectedPhoto } from './ProtectedPhoto'
+import { VideoStill } from './VideoStill'
 
 type PhotoGridProps = {
   plants: Plant[]
@@ -12,7 +13,7 @@ type PhotoGridProps = {
 type Tile = {
   key: string
   plant: Plant
-  src?: string
+  src: string
   alt: string
   kind: 'photo' | 'video'
 }
@@ -34,7 +35,7 @@ export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
     const videoTiles: Tile[] = plant.videos.map((video) => ({
       key: `video-${video.id}`,
       plant,
-      src: video.posterUrl || undefined,
+      src: video.url,
       alt: `Vídeo de ${plant.name}`,
       kind: 'video',
     }))
@@ -58,10 +59,10 @@ export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
           className={`photo-tile${tile.kind === 'video' ? ' is-video' : ''}`}
           to={tile.kind === 'video' ? `/plantas/${tile.plant.id}?midia=video` : `/plantas/${tile.plant.id}`}
         >
-          {tile.src ? (
-            <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} />
+          {tile.kind === 'video' ? (
+            <VideoStill className="is-fill" src={tile.src} alt={tile.alt} />
           ) : (
-            <span className="photo-tile__fallback" aria-hidden="true" />
+            <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} />
           )}
         </Link>
       ))}

@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { relocateMockVideoUrl, seedPlants } from '../data/seed'
+import { relocateMockVideoUrl, withoutSeedPlants } from '../data/seed'
 import { nowIso } from '../lib/dates'
 import { createId } from '../lib/id'
 import { isHttpUrl } from '../lib/media'
@@ -47,12 +47,12 @@ function normalizePlants(plants: Plant[]): Plant[] {
 function loadPlants(): Plant[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return seedPlants
+    if (!raw) return []
     const parsed = JSON.parse(raw) as Plant[]
-    if (!Array.isArray(parsed) || parsed.length === 0) return seedPlants
-    return normalizePlants(parsed)
+    if (!Array.isArray(parsed)) return []
+    return withoutSeedPlants(normalizePlants(parsed))
   } catch {
-    return seedPlants
+    return []
   }
 }
 
@@ -111,8 +111,7 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
     try {
       const remote = await fetchPlants()
       if (gen !== refreshGen.current) return
-      if (remote.length === 0) return
-      const next = normalizePlants(remote)
+      const next = withoutSeedPlants(normalizePlants(remote))
       setPlants((current) => {
         if (plantsSignature(current) === plantsSignature(next)) return current
         persist(next)
@@ -131,32 +130,7 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
         const remote = await fetchPlants()
         if (cancelled) return
 
-        if (remote.length > 0) {
-          const next = normalizePlants(remote)
-          setPlants(next)
-          persist(next)
-          return
-        }
-
-        const local = loadPlants()
-        if (local.length === 0) return
-
-        const migrated: Plant[] = []
-        for (const plant of local) {
-          const media = await preparePlantMedia(plant)
-          const payload: Plant = { ...plant, ...media }
-          try {
-            migrated.push(await createPlant(payload))
-          } catch {
-            try {
-              migrated.push(await updatePlant(payload))
-            } catch {
-              migrated.push(payload)
-            }
-          }
-        }
-        if (cancelled) return
-        const next = normalizePlants(migrated)
+        const next = withoutSeedPlants(normalizePlants(remote))
         setPlants(next)
         persist(next)
       } catch {

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
-import { assertShortVideo, compressImage } from '../lib/media'
+import { assertShortVideo, captureVideoPoster, compressImage } from '../lib/media'
 import { createId, slugifyIdentification } from '../lib/id'
 import { MAX_PHOTOS, MAX_VIDEO_SECONDS, type Plant, type PlantDraft, type PlantPhoto } from '../types/plant'
 import { CameraIcon, StarIcon } from './Icons'
@@ -87,12 +87,13 @@ export function PlantForm({
     try {
       const duration = await assertShortVideo(file)
       const url = URL.createObjectURL(file)
+      const poster = (await captureVideoPoster(url)) || ''
       setVideoUrl((current) => {
         if (current.startsWith('blob:')) URL.revokeObjectURL(current)
         return url
       })
       setVideoDuration(duration)
-      setVideoPoster(photos.find((photo) => photo.isMain)?.url ?? photos[0]?.url ?? '')
+      setVideoPoster(poster)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Vídeo inválido')
     }
@@ -140,7 +141,7 @@ export function PlantForm({
             {
               id: initial?.videos[0]?.id ?? createId(),
               url: videoUrl,
-              posterUrl: videoPoster || photos.find((photo) => photo.isMain)?.url || photos[0]?.url || '',
+              posterUrl: videoPoster,
               durationSeconds: videoDuration || MAX_VIDEO_SECONDS,
               key: initial?.videos[0]?.key,
               posterKey: initial?.videos[0]?.posterKey,
