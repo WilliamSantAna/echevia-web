@@ -1799,10 +1799,8 @@ img {
   font-size: clamp(1.6rem, 7vw, 2.2rem);
   line-height: 1.2;
   font-weight: 700;
-  color: #7f1d1d;
-  text-shadow:
-    0 1px 0 #fff7ed,
-    0 8px 24px rgba(127, 29, 29, 0.28);
+  color: #ffffff;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
 }
 
 html[data-egg='party'] {
@@ -1838,13 +1836,12 @@ html[data-egg='party'] {
 }
 
 html[data-egg='party'] .app-shell {
-  background: linear-gradient(165deg, #fef08a 0%, #fdba74 38%, #86efac 72%, #fca5a5 100%);
-  background-size: 180% 180%;
-  animation: egg-party-bg 8s ease infinite;
+  background: linear-gradient(237deg, #ffe000 0%, #ff9d36 38%, #19bb54 72%, #f40505 100%) 0 0 / 180% 180%;
+  animation: 2s infinite egg-party-bg;
 }
 
 html[data-egg='party'] .app-shell.is-rolling {
-  animation: egg-roll 4s ease-in-out 1, egg-party-bg 8s ease infinite;
+  animation: egg-roll 4s ease-in-out 1, 2s infinite egg-party-bg;
 }
 
 html[data-egg='party'] .topbar,
@@ -1854,9 +1851,11 @@ html[data-egg='party'] .favorites-strip {
   background: transparent;
 }
 
-html[data-egg='party'] .btn,
-html[data-egg='party'] .picker-camera,
+html[data-egg='party'] .topbar__btn,
 html[data-egg='party'] .topbar__add,
+html[data-egg='party'] .picker-camera,
+html[data-egg='party'] .icon-btn,
+html[data-egg='party'] .bottom-nav a,
 html[data-egg='party'] .bottom-nav__identify:not(:disabled) {
   animation: egg-spin 4.5s linear infinite;
 }
@@ -1880,13 +1879,13 @@ html[data-egg='party'] .btn-primary {
 
 @keyframes egg-party-bg {
   0% {
-    background-position: 0% 40%;
+    background-position: 0 50%;
   }
   50% {
-    background-position: 100% 60%;
+    background-position: 100% 50%;
   }
   100% {
-    background-position: 0% 40%;
+    background-position: 0 50%;
   }
 }
 
