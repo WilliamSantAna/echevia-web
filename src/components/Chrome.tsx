@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import logoTextInk from '../assets/logo-text-ink.png'
 import logoTextLight from '../assets/logo-text.png'
 import identifyMark from '../assets/identify-mark.png'
-import { fetchStorageUsage, formatStorageUsed } from '../lib/plantsApi'
+import { formatStorageUsed } from '../lib/plantsApi'
 import { usePlantSearch } from '../lib/search'
 import { APP_VERSION } from '../lib/version'
 import { usePlants } from '../store/plants'
@@ -73,8 +73,8 @@ type MenuDrawerProps = {
 
 export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { theme, setTheme } = useTheme()
-  const [usage, setUsage] = useState<{ usedBytes: number; limitBytes: number } | null>(null)
-  const [usageLabel, setUsageLabel] = useState('…')
+  const { storage: usage, refreshStorage } = usePlants()
+  const usageLabel = usage ? formatStorageUsed(usage.usedBytes) : open ? '…' : '—'
 
   useEffect(() => {
     if (!open) return
@@ -87,22 +87,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
   useEffect(() => {
     if (!open) return
-    let cancelled = false
-    void fetchStorageUsage()
-      .then((snapshot) => {
-        if (cancelled) return
-        setUsage(snapshot)
-        setUsageLabel(formatStorageUsed(snapshot.usedBytes))
-      })
-      .catch(() => {
-        if (cancelled) return
-        setUsage(null)
-        setUsageLabel('—')
-      })
-    return () => {
-      cancelled = true
-    }
-  }, [open])
+    void refreshStorage()
+  }, [open, refreshStorage])
 
   const choose = (next: Theme) => {
     setTheme(next)
@@ -233,6 +219,7 @@ export function BottomNav() {
   const { refreshPlants } = usePlants()
   const [pickerOpen, setPickerOpen] = useState(false)
   const identifyActive = location.pathname === '/identificar'
+  const identifyDisabled = location.pathname === '/nova'
 
   return (
     <>
@@ -242,10 +229,14 @@ export function BottomNav() {
         </NavLink>
         <button
           type="button"
-          className={`bottom-nav__identify${identifyActive ? ' is-active' : ''}`}
+          className={`bottom-nav__identify${identifyActive ? ' is-active' : ''}${identifyDisabled ? ' is-disabled' : ''}`}
           aria-label="Identificar espécie"
           aria-expanded={pickerOpen}
-          onClick={() => setPickerOpen(true)}
+          disabled={identifyDisabled}
+          onClick={() => {
+            if (identifyDisabled) return
+            setPickerOpen(true)
+          }}
         >
           <img className="bottom-nav__identify-mark" src={identifyMark} alt="" />
         </button>

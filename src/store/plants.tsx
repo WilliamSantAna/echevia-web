@@ -15,14 +15,19 @@ import { isHttpUrl, captureVideoPoster } from '../lib/media'
 import {
   createPlant,
   deletePlant,
+  estimateLocalMediaBytes,
   fetchPlants,
+  fetchStorageUsage,
   materializeMediaUrl,
   patchFavorite,
   preparePlantMedia,
+  STORAGE_OVERFLOW_MEDIA,
+  storageWouldOverflow,
+  type StorageUsage,
   updatePlant,
 } from '../lib/plantsApi'
-import { isStoredPoster, readDevicePoster, writeDevicePoster } from '../lib/videoPoster'
-import type { Plant, PlantDraft } from '../types/plant'
+import { clearDevicePoster, isStoredPoster, readDevicePoster, writeDevicePoster } from '../lib/videoPoster'
+import type { Plant, PlantDraft, PlantPhoto, PlantVideo } from '../types/plant'
 
 const STORAGE_KEY = 'echevia.plants.v6'
 
@@ -112,25 +117,41 @@ function plantsSignature(plants: Plant[]): string {
   )
 }
 
+function isPersistedMedia(url: string, key?: string | null) {
+  return Boolean(key) || isHttpUrl(url) || url.startsWith('/') || url.includes('/mock/')
+}
+
 type PlantsContextValue = {
   plants: Plant[]
   photoCount: number
   videoCount: number
+  storage: StorageUsage | null
   getById: (id: string) => Plant | undefined
   getByIdentification: (identification: string) => Plant | undefined
   identificationTaken: (identification: string, ignoreId?: string) => boolean
   toggleFavorite: (id: string) => void
   savePlant: (draft: PlantDraft, id?: string) => Promise<Plant>
+  syncPlantMedia: (id: string, photos: PlantPhoto[], videos: PlantVideo[]) => Promise<void>
   removePlant: (id: string) => void
   refreshPlants: () => Promise<void>
+  refreshStorage: () => Promise<void>
 }
 
 const PlantsContext = createContext<PlantsContextValue | null>(null)
 
 export function PlantsProvider({ children }: { children: ReactNode }) {
   const [plants, setPlants] = useState<Plant[]>(loadPlants)
+  const [storage, setStorage] = useState<StorageUsage | null>(null)
   const refreshGen = useRef(0)
   const posterJobs = useRef(new Set<string>())
+
+  const refreshStorage = useCallback(async () => {
+    try {
+      setStorage(await fetchStorageUsage())
+    } catch {
+      // Keep the last known usage when the API is unreachable.
+    }
+  }, [])
 
   const refreshPlants = useCallback(async () => {
     const gen = ++refreshGen.current
@@ -162,12 +183,13 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
       } catch {
         // Keep the local cache when the API is unreachable.
       }
+      if (!cancelled) void refreshStorage()
     })()
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [refreshStorage])
 
   useEffect(() => {
     let cancelled = false
@@ -245,6 +267,7 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
       plants,
       photoCount,
       videoCount,
+      storage,
       getById: (id) => plants.find((plant) => plant.id === id),
       getByIdentification: (identification) =>
         plants.find(
@@ -274,6 +297,14 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
         })
       },
       savePlant: async (draft, id) => {
+        const extra = await estimateLocalMediaBytes(draft)
+        if (extra > 0) {
+          const usage = storage ?? (await fetchStorageUsage().catch(() => null))
+          if (usage && storageWouldOverflow(usage.usedBytes, usage.limitBytes, extra)) {
+            throw new Error(STORAGE_OVERFLOW_MEDIA)
+          }
+        }
+
         const media = await preparePlantMedia(draft)
         const photos = media.photos.map((photo, index) => ({
           ...photo,
@@ -294,6 +325,7 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
           }
           const persisted = await updatePlant(saved)
           write((current) => current.map((plant) => (plant.id === id ? persisted : plant)))
+          void refreshStorage()
           return persisted
         }
 
@@ -308,18 +340,43 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
         }
         const persisted = await createPlant(saved)
         write((current) => [persisted, ...current])
+        void refreshStorage()
         return persisted
+      },
+      syncPlantMedia: async (id, photos, videos) => {
+        const existing = plants.find((plant) => plant.id === id)
+        if (!existing) throw new Error('Planta não encontrada')
+        const droppedVideos = existing.videos.filter(
+          (video) => !videos.some((item) => item.id === video.id),
+        )
+        const persistedPhotos = photos.filter((photo) => isPersistedMedia(photo.url, photo.key))
+        const persistedVideos = videos.filter((video) => isPersistedMedia(video.url, video.key))
+        const saved: Plant = {
+          ...existing,
+          photos: persistedPhotos,
+          videos: persistedVideos,
+          updatedAt: nowIso(),
+        }
+        const persisted = await updatePlant(saved)
+        droppedVideos.forEach((video) => clearDevicePoster(video.id))
+        write((current) => current.map((plant) => (plant.id === id ? persisted : plant)))
+        await refreshStorage()
       },
       removePlant: (id) => {
         const snapshot = plants
+        const removed = plants.find((plant) => plant.id === id)
         write((current) => current.filter((plant) => plant.id !== id))
-        void deletePlant(id).catch(() => {
-          write(() => snapshot)
-        })
+        removed?.videos.forEach((video) => clearDevicePoster(video.id))
+        void deletePlant(id)
+          .then(() => refreshStorage())
+          .catch(() => {
+            write(() => snapshot)
+          })
       },
       refreshPlants,
+      refreshStorage,
     }
-  }, [plants, refreshPlants])
+  }, [plants, refreshPlants, refreshStorage, storage])
 
   return <PlantsContext.Provider value={value}>{children}</PlantsContext.Provider>
 }

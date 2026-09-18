@@ -1,6 +1,6 @@
 import { apiUrl, ApiError } from './api'
 import { dataUrlToFile } from './media'
-import type { Plant, PlantDraft, PlantPhoto, PlantVideo } from '../types/plant'
+import { STORAGE_BLOCK_RATIO, type Plant, type PlantDraft, type PlantPhoto, type PlantVideo } from '../types/plant'
 
 function isRemoteMediaUrl(url: string): boolean {
   return (
@@ -148,6 +148,41 @@ export async function uploadMedia(file: File, kind: 'photo' | 'video'): Promise<
   }
 
   return parseJson<{ url: string; key: string }>(response, 'Não foi possível enviar a mídia.')
+}
+
+export function storageWouldOverflow(usedBytes: number, limitBytes: number, extraBytes: number): boolean {
+  if (extraBytes <= 0) return false
+  const limit = Math.max(limitBytes, 1)
+  if (usedBytes / limit >= STORAGE_BLOCK_RATIO) return true
+  return usedBytes + extraBytes > limit
+}
+
+export const STORAGE_OVERFLOW_PHOTO =
+  'Esta foto vai estourar o espaço de 10GB. Exclua dados para continuar.'
+export const STORAGE_OVERFLOW_VIDEO =
+  'Este vídeo vai estourar o espaço de 10GB. Exclua dados para continuar.'
+export const STORAGE_OVERFLOW_MEDIA =
+  'Esta mídia vai estourar o espaço de 10GB. Exclua dados para continuar.'
+
+async function urlPayloadBytes(url: string): Promise<number> {
+  if (!url) return 0
+  if (url.startsWith('data:')) {
+    const encoded = url.split(',')[1] ?? ''
+    return Math.ceil((encoded.length * 3) / 4)
+  }
+  if (url.startsWith('blob:')) {
+    const blob = await fetch(url).then((response) => response.blob())
+    return blob.size
+  }
+  return 0
+}
+
+export async function estimateLocalMediaBytes(draft: Pick<PlantDraft, 'photos' | 'videos'>): Promise<number> {
+  const photoBytes = await Promise.all(draft.photos.map((photo) => urlPayloadBytes(photo.url)))
+  const videoBytes = await Promise.all(
+    draft.videos.flatMap((video) => [urlPayloadBytes(video.url), urlPayloadBytes(video.posterUrl)]),
+  )
+  return [...photoBytes, ...videoBytes].reduce((sum, size) => sum + size, 0)
 }
 
 export async function materializeMediaUrl(

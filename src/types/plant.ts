@@ -40,3 +40,5 @@ export type PlantDraft = {
 
 export const MAX_PHOTOS = 6
 export const MAX_VIDEO_SECONDS = 30
+export const MAX_PHOTO_BYTES = 10 * 1024 * 1024
+export const STORAGE_BLOCK_RATIO = 0.99

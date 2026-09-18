@@ -1,4 +1,4 @@
-import { MAX_VIDEO_SECONDS } from '../types/plant'
+import { MAX_PHOTO_BYTES, MAX_VIDEO_SECONDS } from '../types/plant'
 
 async function compressWithBitmap(file: File): Promise<string> {
   const bitmap = await createImageBitmap(file)
@@ -47,7 +47,14 @@ function compressWithImage(file: File): Promise<string> {
   })
 }
 
+export function assertPhotoSize(file: File) {
+  if (file.size > MAX_PHOTO_BYTES) {
+    throw new Error('A foto deve ter no máximo 10 MB.')
+  }
+}
+
 export async function compressImage(file: File): Promise<string> {
+  assertPhotoSize(file)
   try {
     return await compressWithBitmap(file)
   } catch {

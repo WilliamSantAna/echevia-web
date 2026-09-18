@@ -45,6 +45,14 @@ export function writeDevicePoster(videoId: string, url: string) {
   writeAll(posters)
 }
 
+export function clearDevicePoster(videoId: string) {
+  if (!videoId) return
+  const posters = readAll()
+  if (!(videoId in posters)) return
+  delete posters[videoId]
+  writeAll(posters)
+}
+
 export function videoPosterSrc(video: Pick<PlantVideo, 'id' | 'posterUrl'>): string {
   if (isStoredPoster(video.posterUrl) && !video.posterUrl.startsWith('blob:')) {
     return video.posterUrl
