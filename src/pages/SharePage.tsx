@@ -1,17 +1,38 @@
-import { Link, useParams } from 'react-router-dom'
-import logoText from '../assets/logo-text.png'
+import { useEffect } from 'react'
+import { useParams } from 'react-router-dom'
+import logoTextInk from '../assets/logo-text-ink.png'
 import { formatDate } from '../lib/dates'
 import { usePlants } from '../store/plants'
 import { ProtectedPhoto } from '../components/ProtectedPhoto'
+
+function useForcedLightTheme() {
+  useEffect(() => {
+    const html = document.documentElement
+    const meta = document.querySelector('meta[name="theme-color"]')
+    const previousTheme = html.dataset.theme
+    const previousColor = meta?.getAttribute('content')
+    html.dataset.theme = 'light'
+    meta?.setAttribute('content', '#ffffff')
+    return () => {
+      if (previousTheme) html.dataset.theme = previousTheme
+      else delete html.dataset.theme
+      if (previousColor) meta?.setAttribute('content', previousColor)
+    }
+  }, [])
+}
 
 export function SharePage() {
   const { identification = '' } = useParams()
   const { getByIdentification } = usePlants()
   const plant = getByIdentification(decodeURIComponent(identification))
+  useForcedLightTheme()
 
   if (!plant) {
     return (
       <main className="share-page">
+        <header>
+          <img className="topbar__logo" src={logoTextInk} alt="Echevia" />
+        </header>
         <h1>Planta não encontrada</h1>
         <p>Este link da Echevia não corresponde a nenhuma suculenta da coleção.</p>
       </main>
@@ -21,15 +42,12 @@ export function SharePage() {
   return (
     <main className="share-page">
       <header>
-        <img className="topbar__logo" src={logoText} alt="Echevia" />
-        <div>
-          <div className="plant-kicker">{plant.identification}</div>
-          <h1>{plant.name}</h1>
-        </div>
+        <img className="topbar__logo" src={logoTextInk} alt="Echevia" />
       </header>
+      <div className="plant-kicker">{plant.identification}</div>
+      <h1>{plant.name}</h1>
       <p className="species">{plant.species}</p>
       {plant.botanicalFamily ? <span className="chip">{plant.botanicalFamily}</span> : null}
-      {plant.notes ? <p className="notes">{plant.notes}</p> : null}
       <div className="share-stack">
         {plant.photos.map((photo, index) => (
           <ProtectedPhoto
@@ -41,13 +59,7 @@ export function SharePage() {
         ))}
       </div>
       <p className="updated-at">{formatDate(plant.updatedAt)}</p>
-      <p className="notes">
-        As fotos desta página são apenas para visualização e não podem ser baixadas pelo menu do
-        navegador.
-      </p>
-      <Link className="btn btn-primary" to={`/plantas/${plant.id}`} style={{ marginTop: 16, display: 'inline-block' }}>
-        Abrir no app
-      </Link>
+      {plant.notes ? <p className="notes">{plant.notes}</p> : null}
     </main>
   )
 }

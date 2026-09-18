@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react'
-import {
-  getDeviceLabel,
-  getInstallPlatform,
-  needsSafariForInstall,
-  subscribeInstallPrompt,
-  type BeforeInstallPromptEvent,
-} from '../lib/install'
+import { getInstallPlatform, subscribeInstallPrompt, type BeforeInstallPromptEvent } from '../lib/install'
 
 const shots = [
   { file: 'gallery.jpg', alt: 'Galeria da coleção' },
   { file: 'plant.jpg', alt: 'Ficha de uma suculenta' },
-  { file: 'videos.jpg', alt: 'Vídeos da coleção' },
+  { file: 'gallery-dark.jpg', alt: 'Galeria no tema escuro' },
+  { file: 'identify-dark.jpg', alt: 'Identificação de espécie no tema escuro' },
 ] as const
 
 function asset(path: string) {
@@ -29,8 +24,6 @@ function IosShareGlyph() {
 
 export function InstallPage() {
   const platform = getInstallPlatform()
-  const device = getDeviceLabel()
-  const safariHint = needsSafariForInstall()
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null)
   const [installed, setInstalled] = useState(false)
 
@@ -51,7 +44,7 @@ export function InstallPage() {
         <img className="store-hero__icon" src={asset('icons/icon-192.png')} alt="" width={88} height={88} />
         <div className="store-hero__meta">
           <h1>Echevia</h1>
-          <p className="store-hero__owner">William Sant Ana</p>
+          <p className="store-hero__owner">Organizador de Coleção de Plantas</p>
           <p className="store-hero__license">Free License - No Ads</p>
         </div>
       </header>
@@ -64,13 +57,7 @@ export function InstallPage() {
         </button>
       ) : (
         <section className="store-howto" aria-label="Como instalar">
-          {safariHint ? (
-            <p className="store-howto__lead">
-              No {device}, abra este site no <strong>Safari</strong> para instalar o app.
-            </p>
-          ) : (
-            <p className="store-howto__lead">Para usar a Echevia neste {device}, instale o aplicativo:</p>
-          )}
+          <p className="store-howto__lead">Como usar Echevia neste dispositivo</p>
           {platform === 'ios' ? (
             <ol className="store-steps">
               <li>

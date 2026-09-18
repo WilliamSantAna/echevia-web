@@ -71,18 +71,3 @@ export function getInstallPlatform(): InstallPlatform {
   if (/iPhone|iPad|iPod/i.test(ua) || isIPadOS()) return 'ios'
   return 'android'
 }
-
-export function getDeviceLabel(): string {
-  const ua = navigator.userAgent
-  if (getInstallPlatform() === 'ios') {
-    if (/iPad/i.test(ua) || isIPadOS()) return 'iPad'
-    if (/iPod/i.test(ua)) return 'iPod'
-    return 'iPhone'
-  }
-  if (/Android/i.test(ua) && !/Mobile/i.test(ua)) return 'tablet'
-  return 'celular'
-}
-
-export function needsSafariForInstall(): boolean {
-  return getInstallPlatform() === 'ios' && /CriOS|FxiOS|EdgiOS|OPiOS/i.test(navigator.userAgent)
-}
