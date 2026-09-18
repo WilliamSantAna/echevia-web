@@ -1690,55 +1690,195 @@ img {
   line-height: 1.55;
 }
 
-.install-banner {
-  display: none;
-  flex-shrink: 0;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  margin: 0 12px 8px;
-  padding: 8px 10px 8px 14px;
-  border-radius: 14px;
-  background: color-mix(in srgb, var(--green-800) 88%, black);
-  color: #f6f1e8;
-  box-shadow: 0 8px 18px rgba(18, 53, 44, 0.18);
+.store-page {
+  --green-950: #0d241c;
+  --green-900: #12352c;
+  --green-800: #1b4d3e;
+  --green-700: #2a6b54;
+  --green-200: #c9e4c7;
+  --orange: #e8924a;
+  --muted: #5c7268;
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  overflow: auto;
+  overscroll-behavior: contain;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--green-800) 18%, #fffcf7) 0%, #fffcf7 220px),
+    #fffcf7;
+  color: #163028;
+  padding: calc(20px + var(--safe-top)) 0 calc(28px + var(--safe-bottom));
 }
 
-.install-banner.is-visible {
+.store-hero {
   display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 22px 18px;
 }
 
-.install-banner p {
-  margin: 0;
-  font-size: 0.78rem;
-  font-weight: 700;
-  line-height: 1.3;
-}
-
-.install-banner__install {
+.store-hero__icon {
+  width: 88px;
+  height: 88px;
   flex-shrink: 0;
+  border-radius: 22px;
+  object-fit: cover;
+  box-shadow: 0 10px 24px rgba(18, 53, 44, 0.18);
+  background: var(--green-900);
+}
+
+.store-hero__meta {
+  min-width: 0;
+}
+
+.store-hero h1 {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 1.7rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--green-950);
+}
+
+.store-hero__owner {
+  margin: 2px 0 0;
+  color: var(--orange);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.store-hero__license {
+  margin: 6px 0 0;
+  color: var(--green-700);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.store-install,
+.store-ready {
+  display: block;
+  width: calc(100% - 44px);
+  margin: 0 22px 22px;
+}
+
+.store-install {
   border: 0;
   border-radius: 999px;
-  padding: 7px 12px;
-  background: #2f9a58;
-  color: #f6f1e8;
+  padding: 14px 18px;
+  background: var(--orange);
+  color: #fffaf4;
   font: inherit;
-  font-size: 0.75rem;
+  font-size: 1rem;
   font-weight: 800;
+  letter-spacing: 0.02em;
   cursor: pointer;
+  box-shadow: 0 10px 22px color-mix(in srgb, var(--orange) 45%, transparent);
 }
 
-.install-banner__close {
+.store-ready {
+  margin-bottom: 22px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--green-200) 70%, #fffcf7);
+  color: var(--green-950);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.store-howto {
+  margin: 0 22px 22px;
+  padding: 16px 16px 8px;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 8px 24px rgba(18, 53, 44, 0.08);
+  border: 1px solid color-mix(in srgb, var(--green-800) 10%, transparent);
+}
+
+.store-howto__lead {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--green-950);
+}
+
+.store-steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.store-steps li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 10px 0;
+  border-top: 1px solid color-mix(in srgb, var(--green-800) 10%, transparent);
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.store-step__n,
+.store-step__glyph {
   flex-shrink: 0;
   width: 28px;
   height: 28px;
-  border: 0;
   border-radius: 50%;
-  background: transparent;
-  color: inherit;
-  font-size: 1.1rem;
-  line-height: 1;
-  cursor: pointer;
+  display: grid;
+  place-items: center;
+  background: var(--green-800);
+  color: #fffcf7;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.store-step__glyph {
+  padding: 5px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.store-shots {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px 22px 8px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+
+.store-shots img {
+  flex: 0 0 auto;
+  height: 420px;
+  width: auto;
+  border-radius: 18px;
+  scroll-snap-align: start;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(18, 53, 44, 0.16);
+  border: 1px solid color-mix(in srgb, var(--green-800) 12%, transparent);
+}
+
+.store-about {
+  padding: 22px 22px 0;
+}
+
+.store-about h2 {
+  margin: 0 0 8px;
+  font-family: var(--display);
+  font-size: 1.2rem;
+  color: var(--green-950);
+}
+
+.store-about p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+  line-height: 1.5;
 }
 
 .app-shell.is-rolling {

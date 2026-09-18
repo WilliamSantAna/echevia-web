@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav, MenuDrawer, SearchBar, TopBar } from './components/Chrome'
 import { EasterFX } from './components/EasterFX'
-import { InstallBanner } from './components/InstallBanner'
 import { useEaster } from './store/easter'
 
 export function AppLayout() {
@@ -20,7 +19,6 @@ export function AppLayout() {
       <main className="main">
         <Outlet />
       </main>
-      <InstallBanner />
       <BottomNav />
       <MenuDrawer open={menuOpen} onClose={() => setMenuOpen(false)} />
       <EasterFX />

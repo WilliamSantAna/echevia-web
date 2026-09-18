@@ -1,15 +1,26 @@
-import { Navigate, Route, Routes } from 'react-router-dom'
+import { useState } from 'react'
+import { Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppLayout } from './AppLayout'
+import { shouldShowInstallPage } from './lib/install'
 import { EditPlantPage } from './pages/EditPlantPage'
 import { GalleryPage } from './pages/GalleryPage'
 import { NewPlantPage } from './pages/NewPlantPage'
 import { IdentifyPage } from './pages/IdentifyPage'
+import { InstallPage } from './pages/InstallPage'
 import { LegalPage } from './pages/LegalPage'
 import { PlantDetailPage } from './pages/PlantDetailPage'
 import { VideosPage } from './pages/VideosPage'
 import { SharePage } from './pages/SharePage'
 
 export default function App() {
+  const location = useLocation()
+  const [showInstall] = useState(shouldShowInstallPage)
+  const isShare = location.pathname.startsWith('/p/')
+
+  if (showInstall && !isShare) {
+    return <InstallPage />
+  }
+
   return (
     <Routes>
       <Route path="/p/:identification" element={<SharePage />} />
