@@ -1,11 +1,13 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import logoTextInk from '../assets/logo-text-ink.png'
 import logoTextLight from '../assets/logo-text.png'
 import identifyMark from '../assets/identify-mark.png'
+import easterEgg1 from '../assets/easter-egg-1.jpeg'
 import { formatStorageUsed } from '../lib/plantsApi'
 import { usePlantSearch } from '../lib/search'
 import { APP_VERSION } from '../lib/version'
+import { isBarrelRollQuery, useEaster } from '../store/easter'
 import { usePlants } from '../store/plants'
 import { useTheme, type Theme } from '../store/theme'
 import { IdentifyPicker } from './IdentifyPicker'
@@ -75,6 +77,8 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { theme, setTheme } = useTheme()
   const { storage: usage, refreshStorage } = usePlants()
   const usageLabel = usage ? formatStorageUsed(usage.usedBytes) : open ? '…' : '—'
+  const [licenseEgg, setLicenseEgg] = useState(false)
+  const licenseClicks = useRef({ count: 0, at: 0 })
 
   useEffect(() => {
     if (!open) return
@@ -92,6 +96,16 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
 
   const choose = (next: Theme) => {
     setTheme(next)
+  }
+
+  const tapLicense = () => {
+    const now = Date.now()
+    if (now - licenseClicks.current.at > 900) licenseClicks.current.count = 0
+    licenseClicks.current.count += 1
+    licenseClicks.current.at = now
+    if (licenseClicks.current.count < 5) return
+    licenseClicks.current.count = 0
+    setLicenseEgg(true)
   }
 
   const usageRatio = usage ? usage.usedBytes / Math.max(usage.limitBytes, 1) : 0
@@ -183,7 +197,7 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
                 <dt>Proprietário</dt>
                 <dd>William Sant Ana</dd>
               </div>
-              <div>
+              <div className="menu-about__license" onClick={tapLicense}>
                 <dt>Licenciado para</dt>
                 <dd>Paulo Criciúma</dd>
               </div>
@@ -194,12 +208,30 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
           </p>
         </div>
       </aside>
+      {licenseEgg ? (
+        <div className="sheet egg-photo-sheet" onClick={() => setLicenseEgg(false)}>
+          <div
+            className="sheet__card egg-photo-card"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Easter egg"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <img src={easterEgg1} alt="Parabéns você achou um Easter Egg" />
+            <button type="button" className="btn btn-primary" onClick={() => setLicenseEgg(false)}>
+              Fechar
+            </button>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
 
 export function SearchBar() {
   const { query, setQuery } = usePlantSearch()
+  const { barrelRoll } = useEaster()
+  const rolled = useRef(false)
 
   return (
     <label className="search-bar">
@@ -208,7 +240,18 @@ export function SearchBar() {
         value={query}
         placeholder="Pesquisar"
         aria-label="Pesquisar plantas"
-        onChange={(event) => setQuery(event.target.value)}
+        onChange={(event) => {
+          const value = event.target.value
+          setQuery(value)
+          if (isBarrelRollQuery(value)) {
+            if (!rolled.current) {
+              rolled.current = true
+              barrelRoll()
+            }
+          } else {
+            rolled.current = false
+          }
+        }}
       />
     </label>
   )

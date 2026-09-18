@@ -1740,3 +1740,170 @@ img {
   line-height: 1;
   cursor: pointer;
 }
+
+.app-shell.is-rolling {
+  animation: egg-roll 4s ease-in-out 1;
+}
+
+@keyframes egg-roll {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.egg-photo-sheet {
+  position: absolute;
+  z-index: 120;
+  align-items: center;
+  pointer-events: auto;
+}
+
+.egg-photo-card {
+  width: min(92%, 360px);
+  border-radius: 18px;
+  padding: 12px 12px 14px;
+}
+
+.egg-photo-card img {
+  width: 100%;
+  border-radius: 12px;
+}
+
+.egg-celebrate {
+  position: absolute;
+  inset: 0;
+  z-index: 95;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  padding: 24px;
+}
+
+.egg-fireworks {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.egg-congrats {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 18ch;
+  text-align: center;
+  font-family: var(--display);
+  font-size: clamp(1.6rem, 7vw, 2.2rem);
+  line-height: 1.2;
+  font-weight: 700;
+  color: #7f1d1d;
+  text-shadow:
+    0 1px 0 #fff7ed,
+    0 8px 24px rgba(127, 29, 29, 0.28);
+}
+
+html[data-egg='party'] {
+  --green-950: #7f1d1d;
+  --green-900: #9a3412;
+  --green-800: #c2410c;
+  --green-700: #ea580c;
+  --green-400: #facc15;
+  --green-200: #bbf7d0;
+  --cream: #fff7ed;
+  --cream-2: #ffedd5;
+  --ink: #7f1d1d;
+  --muted: #9a3412;
+  --pink: #fb7185;
+  --pink-deep: #dc2626;
+  --orange: #f59e0b;
+  --lilac: #f97316;
+  --purple: #facc15;
+  --indigo: #16a34a;
+  --teal: #22c55e;
+  --white: #fffbeb;
+  --app-bg: #fff7ed;
+  --app-bg-2: #ffedd5;
+  --topbar-bg: #fff7ed;
+  --topbar-fg: #9a3412;
+  --search-bg: #ffedd5;
+  --nav-start: #fff7ed;
+  --nav-end: #dcfce7;
+  --nav-icon: #c2410c;
+  --surface: #fffbeb;
+  --label: #9a3412;
+  --btn-fg: #fffbeb;
+}
+
+html[data-egg='party'] .app-shell {
+  background: linear-gradient(165deg, #fef08a 0%, #fdba74 38%, #86efac 72%, #fca5a5 100%);
+  background-size: 180% 180%;
+  animation: egg-party-bg 8s ease infinite;
+}
+
+html[data-egg='party'] .app-shell.is-rolling {
+  animation: egg-roll 4s ease-in-out 1, egg-party-bg 8s ease infinite;
+}
+
+html[data-egg='party'] .topbar,
+html[data-egg='party'] .search-bar,
+html[data-egg='party'] .bottom-nav,
+html[data-egg='party'] .favorites-strip {
+  background: transparent;
+}
+
+html[data-egg='party'] .btn,
+html[data-egg='party'] .picker-camera,
+html[data-egg='party'] .topbar__add,
+html[data-egg='party'] .bottom-nav__identify:not(:disabled) {
+  animation: egg-spin 4.5s linear infinite;
+}
+
+html[data-egg='party'] .favorites-strip__ring {
+  border-color: transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    conic-gradient(from 0deg, #dc2626, #f59e0b, #facc15, #22c55e, #dc2626) border-box;
+  animation: egg-ring-spin 2.4s linear infinite;
+}
+
+html[data-egg='party'] .favorites-strip__photo {
+  animation: egg-ring-spin 2.4s linear infinite reverse;
+}
+
+html[data-egg='party'] .btn-primary {
+  background: linear-gradient(135deg, #dc2626, #ea580c, #facc15);
+  color: #fffbeb;
+}
+
+@keyframes egg-party-bg {
+  0% {
+    background-position: 0% 40%;
+  }
+  50% {
+    background-position: 100% 60%;
+  }
+  100% {
+    background-position: 0% 40%;
+  }
+}
+
+@keyframes egg-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes egg-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

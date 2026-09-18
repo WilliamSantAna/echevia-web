@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { IdentifyPicker } from '../components/IdentifyPicker'
 import { dataUrlToFile } from '../lib/media'
@@ -9,6 +9,7 @@ import {
   type IdentifyLocationState,
   type PlantNetMatch,
 } from '../lib/plantnet'
+import { isMoonCactusName, useEaster } from '../store/easter'
 
 function readState(value: unknown): IdentifyLocationState | null {
   if (!value || typeof value !== 'object') return null
@@ -20,6 +21,8 @@ export function IdentifyPage() {
   const location = useLocation()
   const navigate = useNavigate()
   const incoming = readState(location.state)
+  const { celebrateMoonCactus } = useEaster()
+  const celebrated = useRef('')
   const [photoUrl, setPhotoUrl] = useState<string | null>(incoming?.imageDataUrl ?? null)
   const [pickerOpen, setPickerOpen] = useState(!incoming)
   const [loading, setLoading] = useState(Boolean(incoming))
@@ -46,7 +49,13 @@ export function IdentifyPage() {
 
     void identifySpecies(dataUrlToFile(photoUrl))
       .then((next) => {
-        if (!cancelled) setMatches(next)
+        if (cancelled) return
+        setMatches(next)
+        const first = next[0]?.scientificName ?? ''
+        if (isMoonCactusName(first) && celebrated.current !== photoUrl) {
+          celebrated.current = photoUrl
+          celebrateMoonCactus()
+        }
       })
       .catch((err) => {
         if (cancelled) return
@@ -59,7 +68,7 @@ export function IdentifyPage() {
     return () => {
       cancelled = true
     }
-  }, [photoUrl])
+  }, [photoUrl, celebrateMoonCactus])
 
   return (
     <article className="identify-page">

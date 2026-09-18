@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App.tsx'
+import { EasterProvider } from './store/easter.tsx'
 import { PlantsProvider } from './store/plants.tsx'
 import { ThemeProvider } from './store/theme.tsx'
 import './index.css'
@@ -12,9 +13,11 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter basename={basename}>
       <ThemeProvider>
-        <PlantsProvider>
-          <App />
-        </PlantsProvider>
+        <EasterProvider>
+          <PlantsProvider>
+            <App />
+          </PlantsProvider>
+        </EasterProvider>
       </ThemeProvider>
     </BrowserRouter>
   </StrictMode>,
