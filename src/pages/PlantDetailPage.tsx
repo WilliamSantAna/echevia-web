@@ -1,10 +1,11 @@
 import { useState } from 'react'
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
+import { Link, Navigate, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { PhotoCarousel } from '../components/PhotoCarousel'
 import { PlantStack } from '../components/PlantStack'
 import { PlantVideoPlayer } from '../components/PlantVideoPlayer'
 import { HeartIcon, PencilIcon, ShareIcon, TrashIcon } from '../components/Icons'
 import { formatDate } from '../lib/dates'
+import { hasPlantPhoto, plantPhotos } from '../lib/plant'
 import { sharePlant } from '../lib/share'
 import { usePlants } from '../store/plants'
 import type { Plant } from '../types/plant'
@@ -31,15 +32,27 @@ export function PlantDetailPage() {
     )
   }
 
-  const index = plants.findIndex((item) => item.id === plant.id)
-  const list = index >= 0 ? plants : [plant]
+  const feed = (videoMode ? plants.filter((item) => item.videos.some((video) => video.url)) : plants.filter(hasPlantPhoto))
+  const inFeed = feed.some((item) => item.id === plant.id)
+
+  if (!inFeed) {
+    if (!videoMode && plant.videos.some((video) => video.url)) {
+      return <Navigate to={`/plantas/${plant.id}?midia=video`} replace />
+    }
+    return (
+      <div className="empty">
+        <h2>{videoMode ? 'Vídeo não encontrado' : 'Planta sem foto'}</h2>
+        <Link to={videoMode ? '/videos' : '/'}>Voltar</Link>
+      </div>
+    )
+  }
 
   return (
     <PlantStack
-      plants={list}
+      plants={feed}
       currentId={plant.id}
       onCurrentIdChange={(id) => {
-        const target = list.find((item) => item.id === id)
+        const target = feed.find((item) => item.id === id)
         if (!target) return
         navigate(plantDetailPath(target, videoMode), { replace: true })
       }}
@@ -62,7 +75,7 @@ function PlantDetailCard({
 }) {
   const navigate = useNavigate()
   const { toggleFavorite, removePlant } = usePlants()
-  const photos = plant.photos
+  const photos = plantPhotos(plant)
   const videos = plant.videos
   const showVideo = (videoMode && videos.length > 0) || (photos.length === 0 && videos.length > 0)
   const [active, setActive] = useState(0)

@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import logoTextInk from '../assets/logo-text-ink.png'
 import { formatDate } from '../lib/dates'
+import { plantPhotos } from '../lib/plant'
 import { usePlants } from '../store/plants'
 import { ProtectedPhoto } from '../components/ProtectedPhoto'
 
@@ -49,7 +50,7 @@ export function SharePage() {
       <p className="species">{plant.species}</p>
       {plant.botanicalFamily ? <span className="chip">{plant.botanicalFamily}</span> : null}
       <div className="share-stack">
-        {plant.photos.map((photo, index) => (
+        {plantPhotos(plant).map((photo, index) => (
           <ProtectedPhoto
             key={photo.id}
             src={photo.url}

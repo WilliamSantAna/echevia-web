@@ -226,7 +226,7 @@ export function PlantForm({
       setError(`Adicione 1 vídeo de até ${MAX_VIDEO_SECONDS} segundos.`)
       return
     }
-    if (mediaMode === 'all' && photos.length === 0) {
+    if (allowPhotos && photos.filter((photo) => photo.url?.trim()).length === 0) {
       setError('Adicione ao menos uma foto.')
       return
     }

@@ -22,6 +22,7 @@ export function PhotoCarousel({
   const [lightbox, setLightbox] = useState(false)
   const canSlide = photos.length >= 2
   const current = photos[active] ?? photos[0]
+  if (photos.length === 0) return null
 
   return (
     <div className="carousel-wrap">

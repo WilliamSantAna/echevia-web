@@ -1,7 +1,20 @@
 import type { Plant, PlantPhoto } from '../types/plant'
 
+export function isUsablePhoto(photo: PlantPhoto): boolean {
+  return Boolean(photo.url?.trim())
+}
+
+export function plantPhotos(plant: Plant): PlantPhoto[] {
+  return plant.photos.filter(isUsablePhoto)
+}
+
+export function hasPlantPhoto(plant: Plant): boolean {
+  return plant.photos.some(isUsablePhoto)
+}
+
 export function mainPhotoRecord(plant: Plant): PlantPhoto | undefined {
-  return plant.photos.find((photo) => photo.isMain) ?? plant.photos[0]
+  const photos = plantPhotos(plant)
+  return photos.find((photo) => photo.isMain) ?? photos[0]
 }
 
 export function mainPhoto(plant: Plant): string | undefined {
