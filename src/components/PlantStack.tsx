@@ -1,62 +1,68 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
-import { nearbyPlants, PREFETCH_SPAN, prefetchNearbyPlantMedia } from '../lib/mediaCache'
+import { nearbyPlants, prefetchNearbyPlantMedia } from '../lib/mediaCache'
 import type { Plant } from '../types/plant'
 
 type PlantStackProps = {
   plants: Plant[]
   currentId: string
   onCurrentIdChange: (id: string) => void
-  children: (plant: Plant) => ReactNode
+  children: (plant: Plant, meta: { priority: boolean }) => ReactNode
 }
 
-type Drag = {
-  id: number
-  startX: number
-  startY: number
-  startScroll: number
-  lastY: number
-  lastT: number
-  vy: number
-  axis: 'x' | 'y' | null
-  ignore: boolean
+type Slide = {
+  plant: Plant
+  kind: 'real' | 'clone-start' | 'clone-end'
+}
+
+function buildSlides(plants: Plant[]): Slide[] {
+  if (plants.length <= 1) return plants.map((plant) => ({ plant, kind: 'real' as const }))
+  return [
+    { plant: plants[plants.length - 1], kind: 'clone-start' },
+    ...plants.map((plant) => ({ plant, kind: 'real' as const })),
+    { plant: plants[0], kind: 'clone-end' },
+  ]
 }
 
 export function PlantStack({ plants, currentId, onCurrentIdChange, children }: PlantStackProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const jumpingRef = useRef(false)
+  const fromScrollRef = useRef(false)
   const currentIdRef = useRef(currentId)
   const onChangeRef = useRef(onCurrentIdChange)
   currentIdRef.current = currentId
   onChangeRef.current = onCurrentIdChange
 
   const looping = plants.length > 1
-  const uniqueKeys = plants.length >= PREFETCH_SPAN * 2 + 1
-  const slides = useMemo(
-    () => (looping ? nearbyPlants(plants, currentId, PREFETCH_SPAN) : plants.slice(0, 1)),
-    [plants, currentId, looping],
+  const slides = useMemo(() => buildSlides(plants), [plants])
+  const priorityIds = useMemo(
+    () => new Set(nearbyPlants(plants, currentId).map((plant) => plant.id)),
+    [plants, currentId],
   )
-  const restIndex = looping ? PREFETCH_SPAN : 0
 
-  const snapToRest = (behavior: ScrollBehavior = 'auto') => {
+  const slideEls = () => Array.from(viewportRef.current?.children ?? []) as HTMLElement[]
+
+  const scrollToPlant = (id: string) => {
     const node = viewportRef.current
     if (!node) return
-    const height = node.clientHeight
-    if (height < 8) return
+    const target = slideEls().find((slide) => slide.dataset.kind === 'real' && slide.dataset.plantId === id)
+    if (!target) return
     jumpingRef.current = true
-    node.scrollTo({ top: restIndex * height, behavior })
-    window.setTimeout(() => {
+    node.scrollTop = target.offsetTop
+    requestAnimationFrame(() => {
       jumpingRef.current = false
-    }, behavior === 'smooth' ? 420 : 80)
+    })
   }
 
   useLayoutEffect(() => {
-    const node = viewportRef.current
-    if (!node) return
-    snapToRest('auto')
-    if (node.clientHeight >= 8) return
-    const frame = requestAnimationFrame(() => snapToRest('auto'))
+    if (fromScrollRef.current) {
+      fromScrollRef.current = false
+      return
+    }
+    scrollToPlant(currentId)
+    if ((viewportRef.current?.clientHeight ?? 0) >= 8) return
+    const frame = requestAnimationFrame(() => scrollToPlant(currentId))
     return () => cancelAnimationFrame(frame)
-  }, [currentId, restIndex, slides.length])
+  }, [currentId, slides.length])
 
   useEffect(() => {
     prefetchNearbyPlantMedia(plants, currentId)
@@ -64,30 +70,66 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
 
   useEffect(() => {
     const node = viewportRef.current
-    if (!node || !looping) return
+    if (!node) return
 
     const nearestIndex = () => {
       const y = node.scrollTop
-      const height = node.clientHeight || 1
-      return Math.max(0, Math.min(slides.length - 1, Math.round(y / height)))
+      let best = 0
+      let dist = Infinity
+      slideEls().forEach((slide, index) => {
+        const delta = Math.abs(slide.offsetTop - y)
+        if (delta < dist) {
+          dist = delta
+          best = index
+        }
+      })
+      return best
     }
 
-    const settle = () => {
+    const emit = (id: string) => {
+      if (id === currentIdRef.current) return
+      fromScrollRef.current = true
+      onChangeRef.current(id)
+    }
+
+    const jumpTo = (target: HTMLElement) => {
+      jumpingRef.current = true
+      node.scrollTop = target.offsetTop
+      requestAnimationFrame(() => {
+        jumpingRef.current = false
+      })
+    }
+
+    const syncCurrent = () => {
       if (jumpingRef.current) return
       const index = nearestIndex()
-      const next = slides[index]
-      if (!next) return
-      if (next.id !== currentIdRef.current) {
-        onChangeRef.current(next.id)
+      const slide = slides[index]
+      if (!slide) return
+      emit(slide.plant.id)
+    }
+
+    const settleLoop = () => {
+      if (jumpingRef.current || !looping) return
+      const list = slideEls()
+      const last = list.length - 1
+      if (last < 2) return
+      const index = nearestIndex()
+      if (index === 0) {
+        const target = list[last - 1]
+        if (target) jumpTo(target)
         return
       }
-      if (index !== restIndex) snapToRest('auto')
+      if (index === last) {
+        const target = list[1]
+        if (target) jumpTo(target)
+      }
     }
 
     let timer = 0
     const onScroll = () => {
+      syncCurrent()
       window.clearTimeout(timer)
-      timer = window.setTimeout(settle, 80)
+      timer = window.setTimeout(settleLoop, 80)
     }
 
     const onKey = (event: KeyboardEvent) => {
@@ -95,126 +137,35 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
       const height = node.clientHeight
       if (event.key === 'ArrowDown') {
         event.preventDefault()
-        node.scrollTo({ top: node.scrollTop + height, behavior: 'smooth' })
+        node.scrollBy({ top: height, behavior: 'smooth' })
       }
       if (event.key === 'ArrowUp') {
         event.preventDefault()
-        node.scrollTo({ top: node.scrollTop - height, behavior: 'smooth' })
+        node.scrollBy({ top: -height, behavior: 'smooth' })
       }
-    }
-
-    const dragRef: { current: Drag | null } = { current: null }
-    let touchBound = false
-
-    const onTouchMove = (event: TouchEvent) => {
-      const drag = dragRef.current
-      if (drag?.axis === 'y' && !drag.ignore && event.cancelable) event.preventDefault()
-    }
-
-    const bindYTouch = () => {
-      if (touchBound) return
-      touchBound = true
-      node.addEventListener('touchmove', onTouchMove, { capture: true, passive: false })
-    }
-
-    const unbindYTouch = () => {
-      if (!touchBound) return
-      touchBound = false
-      node.removeEventListener('touchmove', onTouchMove, true)
-    }
-
-    const onPointerDown = (event: PointerEvent) => {
-      if (event.pointerType === 'mouse') return
-      if (document.querySelector('.lightbox, .sheet')) return
-      dragRef.current = {
-        id: event.pointerId,
-        startX: event.clientX,
-        startY: event.clientY,
-        startScroll: node.scrollTop,
-        lastY: event.clientY,
-        lastT: performance.now(),
-        vy: 0,
-        axis: null,
-        ignore: false,
-      }
-    }
-
-    const onPointerMove = (event: PointerEvent) => {
-      const drag = dragRef.current
-      if (!drag || event.pointerId !== drag.id || drag.ignore) return
-      const dx = event.clientX - drag.startX
-      const dy = event.clientY - drag.startY
-      if (!drag.axis) {
-        if (Math.hypot(dx, dy) < 10) return
-        drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-        if (drag.axis === 'x') {
-          drag.ignore = true
-          return
-        }
-        bindYTouch()
-        node.classList.add('is-dragging')
-      }
-      if (drag.axis !== 'y') return
-      const now = performance.now()
-      const elapsed = now - drag.lastT
-      if (elapsed > 0) drag.vy = (event.clientY - drag.lastY) / elapsed
-      drag.lastY = event.clientY
-      drag.lastT = now
-      node.scrollTop = drag.startScroll - dy
-    }
-
-    const endDrag = (event: PointerEvent) => {
-      const drag = dragRef.current
-      if (!drag || event.pointerId !== drag.id) return
-      dragRef.current = null
-      unbindYTouch()
-      node.classList.remove('is-dragging')
-      if (drag.axis !== 'y' || drag.ignore) return
-      const height = node.clientHeight || 1
-      let next = Math.round(node.scrollTop / height)
-      if (drag.vy < -0.35) next += 1
-      if (drag.vy > 0.35) next -= 1
-      next = Math.max(0, Math.min(slides.length - 1, next))
-      jumpingRef.current = true
-      node.scrollTo({ top: next * height, behavior: 'smooth' })
-      window.setTimeout(() => {
-        jumpingRef.current = false
-        settle()
-      }, 420)
     }
 
     node.addEventListener('scroll', onScroll, { passive: true })
-    node.addEventListener('scrollend', settle)
-    node.addEventListener('pointerdown', onPointerDown)
-    node.addEventListener('pointermove', onPointerMove)
-    node.addEventListener('pointerup', endDrag)
-    node.addEventListener('pointercancel', endDrag)
+    node.addEventListener('scrollend', settleLoop)
     window.addEventListener('keydown', onKey)
     return () => {
       node.removeEventListener('scroll', onScroll)
-      node.removeEventListener('scrollend', settle)
-      node.removeEventListener('pointerdown', onPointerDown)
-      node.removeEventListener('pointermove', onPointerMove)
-      node.removeEventListener('pointerup', endDrag)
-      node.removeEventListener('pointercancel', endDrag)
+      node.removeEventListener('scrollend', settleLoop)
       window.removeEventListener('keydown', onKey)
-      unbindYTouch()
       window.clearTimeout(timer)
     }
-  }, [looping, restIndex, slides])
+  }, [looping, slides])
 
   return (
-    <div
-      ref={viewportRef}
-      className={`plant-stack${looping ? ' is-looping' : ''}`}
-      aria-label="Detalhe da planta"
-    >
-      {slides.map((plant, slot) => (
+    <div ref={viewportRef} className="plant-stack" aria-label="Detalhe da planta">
+      {slides.map((slide, slot) => (
         <div
-          key={uniqueKeys ? plant.id : `${slot}-${plant.id}`}
+          key={`${slide.kind}-${slide.plant.id}-${slot}`}
           className="plant-stack__slide"
+          data-plant-id={slide.plant.id}
+          data-kind={slide.kind}
         >
-          {children(plant)}
+          {children(slide.plant, { priority: priorityIds.has(slide.plant.id) })}
         </div>
       ))}
     </div>

@@ -689,8 +689,7 @@ img {
 .plant-stack {
   height: 100%;
   overflow-x: hidden;
-  overflow-y: auto;
-  scroll-snap-type: y mandatory;
+  overflow-y: scroll;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
   touch-action: pan-y;
@@ -701,16 +700,10 @@ img {
   display: none;
 }
 
-.plant-stack.is-dragging {
-  scroll-snap-type: none;
-}
-
 .plant-stack__slide {
   height: 100%;
   overflow: hidden;
   overscroll-behavior: none;
-  scroll-snap-align: start;
-  scroll-snap-stop: always;
 }
 
 .plant-page {

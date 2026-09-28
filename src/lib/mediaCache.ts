@@ -65,10 +65,8 @@ export function nearbyPlants(plants: Plant[], currentId: string, span = PREFETCH
 }
 
 export function prefetchNearbyPlantMedia(plants: Plant[], currentId: string, span = PREFETCH_SPAN) {
-  prefetchUrls(
-    nearbyPlants(plants, currentId, span).flatMap(plantImageUrls),
-    true,
-  )
+  prefetchUrls(nearbyPlants(plants, currentId, span).flatMap(plantImageUrls), true)
+  prefetchUrls(nearbyPlants(plants, currentId, span + 2).flatMap(plantImageUrls), false)
 }
 
 export async function cacheAllPlantImages(plants: Plant[]) {

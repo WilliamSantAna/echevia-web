@@ -9,9 +9,16 @@ type PhotoCarouselProps = {
   plantName: string
   active: number
   onActiveChange: (index: number) => void
+  priority?: boolean
 }
 
-export function PhotoCarousel({ photos, plantName, active, onActiveChange }: PhotoCarouselProps) {
+export function PhotoCarousel({
+  photos,
+  plantName,
+  active,
+  onActiveChange,
+  priority = false,
+}: PhotoCarouselProps) {
   const [lightbox, setLightbox] = useState(false)
   const canSlide = photos.length >= 2
   const current = photos[active] ?? photos[0]
@@ -34,6 +41,7 @@ export function PhotoCarousel({ photos, plantName, active, onActiveChange }: Pho
             className="swipe-pager__slide"
             src={photo.url}
             alt={`${plantName} · foto ${index + 1}`}
+            loading={priority ? 'eager' : 'lazy'}
           />
         ))}
       </SwipePager>

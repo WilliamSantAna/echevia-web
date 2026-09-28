@@ -44,12 +44,22 @@ export function PlantDetailPage() {
         navigate(plantDetailPath(target, videoMode), { replace: true })
       }}
     >
-      {(card) => <PlantDetailCard plant={card} videoMode={videoMode} />}
+      {(card, { priority }) => (
+        <PlantDetailCard plant={card} videoMode={videoMode} priority={priority} />
+      )}
     </PlantStack>
   )
 }
 
-function PlantDetailCard({ plant, videoMode }: { plant: Plant; videoMode: boolean }) {
+function PlantDetailCard({
+  plant,
+  videoMode,
+  priority,
+}: {
+  plant: Plant
+  videoMode: boolean
+  priority: boolean
+}) {
   const navigate = useNavigate()
   const { toggleFavorite, removePlant } = usePlants()
   const photos = plant.photos
@@ -74,6 +84,7 @@ function PlantDetailCard({ plant, videoMode }: { plant: Plant; videoMode: boolea
           plantName={plant.name}
           active={active}
           onActiveChange={setActive}
+          priority={priority}
         />
       )}
       <div className="plant-body">
