@@ -1,30 +1,26 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { PhotoCarousel } from '../components/PhotoCarousel'
+import { PlantStack } from '../components/PlantStack'
 import { PlantVideoPlayer } from '../components/PlantVideoPlayer'
 import { HeartIcon, PencilIcon, ShareIcon, TrashIcon } from '../components/Icons'
 import { formatDate } from '../lib/dates'
 import { sharePlant } from '../lib/share'
 import { usePlants } from '../store/plants'
+import type { Plant } from '../types/plant'
+
+function plantDetailPath(plant: Plant, videoMode: boolean) {
+  if (videoMode && plant.videos.length > 0) return `/plantas/${plant.id}?midia=video`
+  return `/plantas/${plant.id}`
+}
 
 export function PlantDetailPage() {
   const { id = '' } = useParams()
   const [params] = useSearchParams()
-  const { getById, toggleFavorite, removePlant } = usePlants()
+  const { plants, getById } = usePlants()
   const plant = getById(id)
   const navigate = useNavigate()
-  const photos = plant?.photos ?? []
-  const videos = plant?.videos ?? []
-  const videoMode =
-    params.get('midia') === 'video' || (photos.length === 0 && videos.length > 0)
-  const mediaKey = `${id}:${videoMode ? 'video' : 'photo'}`
-  const [activeByKey, setActiveByKey] = useState<Record<string, number>>({})
-  const active = activeByKey[mediaKey] ?? 0
-  const setActive = (index: number) => {
-    setActiveByKey((current) => ({ ...current, [mediaKey]: index }))
-  }
-  const [toast, setToast] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState(false)
+  const videoMode = params.get('midia') === 'video'
 
   if (!plant) {
     return (
@@ -35,9 +31,48 @@ export function PlantDetailPage() {
     )
   }
 
+  const index = plants.findIndex((item) => item.id === plant.id)
+  const list = index >= 0 ? plants : [plant]
+  const current = index >= 0 ? index : 0
+  const looping = list.length > 1
+  const prev = list[(current - 1 + list.length) % list.length]
+  const next = list[(current + 1) % list.length]
+
+  return (
+    <PlantStack
+      currentId={plant.id}
+      looping={looping}
+      onCommit={(slot) => {
+        const target = slot === 0 ? prev : next
+        navigate(plantDetailPath(target, videoMode), { replace: true })
+      }}
+    >
+      {looping ? (
+        <>
+          <PlantDetailCard plant={prev} videoMode={videoMode} />
+          <PlantDetailCard plant={plant} videoMode={videoMode} />
+          <PlantDetailCard plant={next} videoMode={videoMode} />
+        </>
+      ) : (
+        <PlantDetailCard plant={plant} videoMode={videoMode} />
+      )}
+    </PlantStack>
+  )
+}
+
+function PlantDetailCard({ plant, videoMode }: { plant: Plant; videoMode: boolean }) {
+  const navigate = useNavigate()
+  const { toggleFavorite, removePlant } = usePlants()
+  const photos = plant.photos
+  const videos = plant.videos
+  const showVideo = (videoMode && videos.length > 0) || (photos.length === 0 && videos.length > 0)
+  const [active, setActive] = useState(0)
+  const [toast, setToast] = useState('')
+  const [confirmDelete, setConfirmDelete] = useState(false)
+
   return (
     <article className="plant-page">
-      {videoMode && videos.length > 0 ? (
+      {showVideo ? (
         <PlantVideoPlayer
           videos={videos}
           plantName={plant.name}
@@ -57,7 +92,7 @@ export function PlantDetailPage() {
         <div className="plant-heading">
           <h1>{plant.name}</h1>
           <div className="plant-heading__actions">
-            {videoMode ? null : (
+            {showVideo ? null : (
               <button
                 type="button"
                 className={`icon-btn icon-btn-heart${plant.favorite ? ' is-fav' : ''}`}

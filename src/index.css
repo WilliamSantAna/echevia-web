@@ -337,6 +337,11 @@ img {
   padding-bottom: 12px;
 }
 
+.main:has(.plant-stack) {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+
 .bottom-nav {
   position: relative;
   flex-shrink: 0;
@@ -680,10 +685,42 @@ img {
   color: var(--pink);
 }
 
+.plant-stack {
+  height: 100%;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.plant-stack.is-dragging {
+  cursor: grabbing;
+}
+
+.plant-stack__track {
+  display: flex;
+  flex-direction: column;
+  will-change: transform;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.plant-stack__track > .plant-page {
+  flex: 0 0 auto;
+  width: 100%;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
 .plant-page {
   display: flex;
   flex-direction: column;
   min-height: 100%;
+}
+
+.plant-stack .plant-page {
+  min-height: 0;
 }
 
 .carousel-wrap {
