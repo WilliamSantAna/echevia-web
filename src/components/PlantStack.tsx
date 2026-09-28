@@ -9,6 +9,29 @@ type PlantStackProps = {
   children: (plant: Plant) => ReactNode
 }
 
+type Drag = {
+  id: number
+  startX: number
+  startY: number
+  startScroll: number
+  lastY: number
+  lastT: number
+  vy: number
+  axis: 'x' | 'y' | null
+  ignore: boolean
+}
+
+function notesStealVertical(target: EventTarget | null, dy: number) {
+  const body = target instanceof Element ? target.closest('.plant-body') : null
+  if (!(body instanceof HTMLElement)) return false
+  if (body.scrollHeight - body.clientHeight <= 4) return false
+  const atTop = body.scrollTop <= 0
+  const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 1
+  if (dy > 0 && atTop) return false
+  if (dy < 0 && atBottom) return false
+  return true
+}
+
 export function PlantStack({ plants, currentId, onCurrentIdChange, children }: PlantStackProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const jumpingRef = useRef(false)
@@ -34,7 +57,7 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
     node.scrollTo({ top: restIndex * height, behavior })
     window.setTimeout(() => {
       jumpingRef.current = false
-    }, 80)
+    }, behavior === 'smooth' ? 420 : 80)
   }
 
   useLayoutEffect(() => {
@@ -91,13 +114,102 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
       }
     }
 
+    const dragRef: { current: Drag | null } = { current: null }
+    let touchBound = false
+
+    const onTouchMove = (event: TouchEvent) => {
+      const drag = dragRef.current
+      if (drag?.axis === 'y' && !drag.ignore && event.cancelable) event.preventDefault()
+    }
+
+    const bindYTouch = () => {
+      if (touchBound) return
+      touchBound = true
+      node.addEventListener('touchmove', onTouchMove, { capture: true, passive: false })
+    }
+
+    const unbindYTouch = () => {
+      if (!touchBound) return
+      touchBound = false
+      node.removeEventListener('touchmove', onTouchMove, true)
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') return
+      if (document.querySelector('.lightbox, .sheet')) return
+      dragRef.current = {
+        id: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScroll: node.scrollTop,
+        lastY: event.clientY,
+        lastT: performance.now(),
+        vy: 0,
+        axis: null,
+        ignore: false,
+      }
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || event.pointerId !== drag.id || drag.ignore) return
+      const dx = event.clientX - drag.startX
+      const dy = event.clientY - drag.startY
+      if (!drag.axis) {
+        if (Math.hypot(dx, dy) < 10) return
+        drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+        if (drag.axis === 'x' || notesStealVertical(event.target, dy)) {
+          drag.ignore = true
+          return
+        }
+        bindYTouch()
+        node.classList.add('is-dragging')
+      }
+      if (drag.axis !== 'y') return
+      const now = performance.now()
+      const elapsed = now - drag.lastT
+      if (elapsed > 0) drag.vy = (event.clientY - drag.lastY) / elapsed
+      drag.lastY = event.clientY
+      drag.lastT = now
+      node.scrollTop = drag.startScroll - dy
+    }
+
+    const endDrag = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || event.pointerId !== drag.id) return
+      dragRef.current = null
+      unbindYTouch()
+      node.classList.remove('is-dragging')
+      if (drag.axis !== 'y' || drag.ignore) return
+      const height = node.clientHeight || 1
+      let next = Math.round(node.scrollTop / height)
+      if (drag.vy < -0.35) next += 1
+      if (drag.vy > 0.35) next -= 1
+      next = Math.max(0, Math.min(slides.length - 1, next))
+      jumpingRef.current = true
+      node.scrollTo({ top: next * height, behavior: 'smooth' })
+      window.setTimeout(() => {
+        jumpingRef.current = false
+        settle()
+      }, 420)
+    }
+
     node.addEventListener('scroll', onScroll, { passive: true })
     node.addEventListener('scrollend', settle)
+    node.addEventListener('pointerdown', onPointerDown)
+    node.addEventListener('pointermove', onPointerMove)
+    node.addEventListener('pointerup', endDrag)
+    node.addEventListener('pointercancel', endDrag)
     window.addEventListener('keydown', onKey)
     return () => {
       node.removeEventListener('scroll', onScroll)
       node.removeEventListener('scrollend', settle)
+      node.removeEventListener('pointerdown', onPointerDown)
+      node.removeEventListener('pointermove', onPointerMove)
+      node.removeEventListener('pointerup', endDrag)
+      node.removeEventListener('pointercancel', endDrag)
       window.removeEventListener('keydown', onKey)
+      unbindYTouch()
       window.clearTimeout(timer)
     }
   }, [looping, restIndex, slides])

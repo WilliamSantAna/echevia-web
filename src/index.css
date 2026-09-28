@@ -518,6 +518,7 @@ img {
   position: absolute;
   inset: 0;
   z-index: 1;
+  touch-action: pan-y;
 }
 
 .protected-photo.is-fill {
@@ -692,13 +693,17 @@ img {
   scroll-snap-type: y mandatory;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.plant-stack.is-dragging {
+  scroll-snap-type: none;
 }
 
 .plant-stack__slide {
   height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
+  overflow: hidden;
+  overscroll-behavior: none;
   scroll-snap-align: start;
   scroll-snap-stop: always;
 }
@@ -710,7 +715,16 @@ img {
 }
 
 .plant-stack .plant-page {
+  height: 100%;
   min-height: 100%;
+  overflow: hidden;
+}
+
+.plant-stack .plant-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .carousel-wrap {

@@ -100,6 +100,21 @@ export function SwipePager({
     const node = viewportRef.current
     if (!node) return
 
+    let touchBound = false
+    const onTouchMove = (event: TouchEvent) => {
+      if (dragRef.current?.axis === 'x' && event.cancelable) event.preventDefault()
+    }
+    const bindXTouch = () => {
+      if (touchBound) return
+      touchBound = true
+      node.addEventListener('touchmove', onTouchMove, { passive: false })
+    }
+    const unbindXTouch = () => {
+      if (!touchBound) return
+      touchBound = false
+      node.removeEventListener('touchmove', onTouchMove)
+    }
+
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
       skipTap.current = false
@@ -129,6 +144,7 @@ export function SwipePager({
           dragRef.current = null
           return
         }
+        bindXTouch()
       }
       if (drag.axis !== 'x') return
       if (event.cancelable) event.preventDefault()
@@ -151,6 +167,7 @@ export function SwipePager({
       const drag = dragRef.current
       if (!drag || event.pointerId !== drag.id) return
       dragRef.current = null
+      unbindXTouch()
       node.classList.remove('is-dragging')
       if (drag.axis !== 'x') return
       const width = widthRef.current
@@ -167,17 +184,12 @@ export function SwipePager({
       onTapRef.current?.()
     }
 
-    const onTouchMove = (event: TouchEvent) => {
-      if (dragRef.current?.axis === 'x' && event.cancelable) event.preventDefault()
-    }
-
     node.addEventListener('pointerdown', onPointerDown)
     node.addEventListener('pointermove', onPointerMove)
     node.addEventListener('pointerup', endDrag)
     node.addEventListener('pointercancel', endDrag)
     node.addEventListener('lostpointercapture', endDrag)
     node.addEventListener('click', onClick)
-    node.addEventListener('touchmove', onTouchMove, { passive: false })
 
     return () => {
       node.removeEventListener('pointerdown', onPointerDown)
@@ -186,7 +198,7 @@ export function SwipePager({
       node.removeEventListener('pointercancel', endDrag)
       node.removeEventListener('lostpointercapture', endDrag)
       node.removeEventListener('click', onClick)
-      node.removeEventListener('touchmove', onTouchMove)
+      unbindXTouch()
     }
   }, [])
 
