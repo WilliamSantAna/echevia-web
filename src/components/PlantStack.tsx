@@ -21,17 +21,6 @@ type Drag = {
   ignore: boolean
 }
 
-function notesStealVertical(target: EventTarget | null, dy: number) {
-  const body = target instanceof Element ? target.closest('.plant-body') : null
-  if (!(body instanceof HTMLElement)) return false
-  if (body.scrollHeight - body.clientHeight <= 4) return false
-  const atTop = body.scrollTop <= 0
-  const atBottom = body.scrollTop + body.clientHeight >= body.scrollHeight - 1
-  if (dy > 0 && atTop) return false
-  if (dy < 0 && atBottom) return false
-  return true
-}
-
 export function PlantStack({ plants, currentId, onCurrentIdChange, children }: PlantStackProps) {
   const viewportRef = useRef<HTMLDivElement>(null)
   const jumpingRef = useRef(false)
@@ -158,7 +147,7 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
       if (!drag.axis) {
         if (Math.hypot(dx, dy) < 10) return
         drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-        if (drag.axis === 'x' || notesStealVertical(event.target, dy)) {
+        if (drag.axis === 'x') {
           drag.ignore = true
           return
         }
