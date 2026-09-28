@@ -5,9 +5,16 @@ type ProtectedPhotoProps = {
   alt: string
   className?: string
   watermark?: boolean
+  loading?: 'eager' | 'lazy'
 }
 
-export function ProtectedPhoto({ src, alt, className = '', watermark = false }: ProtectedPhotoProps) {
+export function ProtectedPhoto({
+  src,
+  alt,
+  className = '',
+  watermark = false,
+  loading = 'eager',
+}: ProtectedPhotoProps) {
   useEffect(() => {
     const prevent = (event: Event) => event.preventDefault()
     document.addEventListener('dragstart', prevent)
@@ -25,6 +32,7 @@ export function ProtectedPhoto({ src, alt, className = '', watermark = false }: 
         alt={alt}
         draggable={false}
         decoding="async"
+        loading={loading}
       />
       <div className="protected-photo__shield" aria-hidden="true" />
       {watermark ? <span className="watermark">Echevia</span> : null}

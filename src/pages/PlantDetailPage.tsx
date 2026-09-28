@@ -33,29 +33,18 @@ export function PlantDetailPage() {
 
   const index = plants.findIndex((item) => item.id === plant.id)
   const list = index >= 0 ? plants : [plant]
-  const current = index >= 0 ? index : 0
-  const looping = list.length > 1
-  const prev = list[(current - 1 + list.length) % list.length]
-  const next = list[(current + 1) % list.length]
 
   return (
     <PlantStack
+      plants={list}
       currentId={plant.id}
-      looping={looping}
-      onCommit={(slot) => {
-        const target = slot === 0 ? prev : next
+      onCurrentIdChange={(id) => {
+        const target = list.find((item) => item.id === id)
+        if (!target) return
         navigate(plantDetailPath(target, videoMode), { replace: true })
       }}
     >
-      {looping ? (
-        <>
-          <PlantDetailCard plant={prev} videoMode={videoMode} />
-          <PlantDetailCard plant={plant} videoMode={videoMode} />
-          <PlantDetailCard plant={next} videoMode={videoMode} />
-        </>
-      ) : (
-        <PlantDetailCard plant={plant} videoMode={videoMode} />
-      )}
+      {(card) => <PlantDetailCard plant={card} videoMode={videoMode} />}
     </PlantStack>
   )
 }

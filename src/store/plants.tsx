@@ -27,6 +27,7 @@ import {
   updatePlant,
 } from '../lib/plantsApi'
 import { clearDevicePoster, isStoredPoster, readDevicePoster, writeDevicePoster } from '../lib/videoPoster'
+import { cacheAllPlantImages } from '../lib/mediaCache'
 import type { Plant, PlantDraft, PlantPhoto, PlantVideo } from '../types/plant'
 
 const STORAGE_KEY = 'echevia.plants.v6'
@@ -190,6 +191,11 @@ export function PlantsProvider({ children }: { children: ReactNode }) {
       cancelled = true
     }
   }, [refreshStorage])
+
+  useEffect(() => {
+    if (plants.length === 0) return
+    void cacheAllPlantImages(plants)
+  }, [plants])
 
   useEffect(() => {
     let cancelled = false

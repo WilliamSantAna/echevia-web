@@ -687,30 +687,20 @@ img {
 
 .plant-stack {
   height: 100%;
-  overflow: hidden;
-  touch-action: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
-.plant-stack.is-dragging {
-  cursor: grabbing;
-}
-
-.plant-stack__track {
-  display: flex;
-  flex-direction: column;
-  will-change: transform;
-  transform: translate3d(0, 0, 0);
-  backface-visibility: hidden;
-  -webkit-backface-visibility: hidden;
-}
-
-.plant-stack__track > .plant-page {
-  flex: 0 0 auto;
-  width: 100%;
-  min-height: 0;
+.plant-stack__slide {
+  height: 100%;
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
 }
 
 .plant-page {
@@ -720,7 +710,7 @@ img {
 }
 
 .plant-stack .plant-page {
-  min-height: 0;
+  min-height: 100%;
 }
 
 .carousel-wrap {

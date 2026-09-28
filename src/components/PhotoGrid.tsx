@@ -73,7 +73,7 @@ export function PhotoGrid({ plants, emptyTitle, emptyText }: PhotoGridProps) {
               alt={tile.alt}
             />
           ) : (
-            <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} />
+            <ProtectedPhoto className="is-fill" src={tile.src} alt={tile.alt} loading="lazy" />
           )}
         </Link>
       ))}
