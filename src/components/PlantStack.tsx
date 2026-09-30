@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, type ReactNode } from 'react'
 import { nearbyPlants, prefetchNearbyPlantMedia } from '../lib/mediaCache'
+import { startStackInertia, stopStackInertia } from '../lib/stackScroll'
 import type { Plant } from '../types/plant'
 
 type PlantStackProps = {
@@ -148,10 +149,111 @@ export function PlantStack({ plants, currentId, onCurrentIdChange, children }: P
     node.addEventListener('scroll', onScroll, { passive: true })
     node.addEventListener('scrollend', settleLoop)
     window.addEventListener('keydown', onKey)
+
+    type Drag = {
+      id: number
+      startX: number
+      startY: number
+      startScroll: number
+      lastY: number
+      lastT: number
+      vy: number
+      axis: 'x' | 'y' | null
+    }
+    const dragRef: { current: Drag | null } = { current: null }
+    let touchBound = false
+
+    const onTouchMove = (event: TouchEvent) => {
+      if (dragRef.current?.axis === 'y' && event.cancelable) event.preventDefault()
+    }
+    const bindTouch = () => {
+      if (touchBound) return
+      touchBound = true
+      node.addEventListener('touchmove', onTouchMove, { capture: true, passive: false })
+    }
+    const unbindTouch = () => {
+      if (!touchBound) return
+      touchBound = false
+      node.removeEventListener('touchmove', onTouchMove, true)
+    }
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (event.pointerType === 'mouse') return
+      if (document.querySelector('.lightbox, .sheet')) return
+      const target = event.target
+      if (
+        target instanceof Element &&
+        target.closest('.swipe-pager, button, a, input, textarea, .sheet, .lightbox')
+      ) {
+        return
+      }
+      stopStackInertia(node)
+      dragRef.current = {
+        id: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        startScroll: node.scrollTop,
+        lastY: event.clientY,
+        lastT: performance.now(),
+        vy: 0,
+        axis: null,
+      }
+      try {
+        node.setPointerCapture(event.pointerId)
+      } catch {
+        // Pointer already released.
+      }
+    }
+
+    const onPointerMove = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || event.pointerId !== drag.id) return
+      const dx = event.clientX - drag.startX
+      const dy = event.clientY - drag.startY
+      if (!drag.axis) {
+        if (Math.hypot(dx, dy) < 10) return
+        drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
+        if (drag.axis === 'x') {
+          dragRef.current = null
+          unbindTouch()
+          return
+        }
+        bindTouch()
+      }
+      if (drag.axis !== 'y') return
+      if (event.cancelable) event.preventDefault()
+      const now = performance.now()
+      const elapsed = now - drag.lastT
+      if (elapsed > 0) drag.vy = (event.clientY - drag.lastY) / elapsed
+      drag.lastY = event.clientY
+      drag.lastT = now
+      node.scrollTop = drag.startScroll - dy
+    }
+
+    const endDrag = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || event.pointerId !== drag.id) return
+      dragRef.current = null
+      unbindTouch()
+      if (drag.axis === 'y') startStackInertia(node, drag.vy)
+    }
+
+    node.addEventListener('pointerdown', onPointerDown)
+    node.addEventListener('pointermove', onPointerMove)
+    node.addEventListener('pointerup', endDrag)
+    node.addEventListener('pointercancel', endDrag)
+    node.addEventListener('lostpointercapture', endDrag)
+
     return () => {
       node.removeEventListener('scroll', onScroll)
       node.removeEventListener('scrollend', settleLoop)
       window.removeEventListener('keydown', onKey)
+      node.removeEventListener('pointerdown', onPointerDown)
+      node.removeEventListener('pointermove', onPointerMove)
+      node.removeEventListener('pointerup', endDrag)
+      node.removeEventListener('pointercancel', endDrag)
+      node.removeEventListener('lostpointercapture', endDrag)
+      unbindTouch()
       window.clearTimeout(timer)
     }
   }, [looping, slides])

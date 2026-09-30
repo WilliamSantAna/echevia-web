@@ -750,6 +750,11 @@ img {
   margin-top: 10px;
 }
 
+.plant-stack .swipe-pager,
+.plant-stack .protected-photo__shield {
+  touch-action: none;
+}
+
 .carousel-wrap {
   position: relative;
   width: 100%;

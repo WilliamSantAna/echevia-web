@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { closestPlantStack, startStackInertia, stopStackInertia } from '../lib/stackScroll'
 
 type SwipePagerProps = {
   index: number
@@ -34,11 +35,15 @@ export function SwipePager({
     startX: number
     startY: number
     startTx: number
+    startScroll: number
     lastX: number
+    lastY: number
     lastT: number
     vx: number
+    vy: number
     axis: 'x' | 'y' | null
     captured: boolean
+    stack: HTMLElement | null
   } | null>(null)
 
   indexRef.current = index
@@ -102,34 +107,53 @@ export function SwipePager({
 
     let touchBound = false
     const onTouchMove = (event: TouchEvent) => {
-      if (dragRef.current?.axis === 'x' && event.cancelable) event.preventDefault()
+      const axis = dragRef.current?.axis
+      if ((axis === 'x' || axis === 'y') && event.cancelable) event.preventDefault()
     }
-    const bindXTouch = () => {
+    const bindTouch = () => {
       if (touchBound) return
       touchBound = true
       node.addEventListener('touchmove', onTouchMove, { passive: false })
     }
-    const unbindXTouch = () => {
+    const unbindTouch = () => {
       if (!touchBound) return
       touchBound = false
       node.removeEventListener('touchmove', onTouchMove)
     }
 
+    const capturePointer = (event: PointerEvent) => {
+      const drag = dragRef.current
+      if (!drag || drag.captured) return
+      try {
+        node.setPointerCapture(event.pointerId)
+        drag.captured = true
+      } catch {
+        // Pointer already released.
+      }
+    }
+
     const onPointerDown = (event: PointerEvent) => {
       if (event.pointerType === 'mouse' && event.button !== 0) return
       skipTap.current = false
+      const stack = allowYRef.current ? closestPlantStack(node) : null
+      if (stack) stopStackInertia(stack)
       dragRef.current = {
         id: event.pointerId,
         startX: event.clientX,
         startY: event.clientY,
         startTx: -indexRef.current * widthRef.current,
+        startScroll: stack?.scrollTop ?? 0,
         lastX: event.clientX,
+        lastY: event.clientY,
         lastT: performance.now(),
         vx: 0,
+        vy: 0,
         axis: allowYRef.current || countRef.current < 2 ? null : 'x',
         captured: false,
+        stack,
       }
       applyTx(txRef.current, false)
+      if (event.pointerType !== 'mouse') capturePointer(event)
     }
 
     const onPointerMove = (event: PointerEvent) => {
@@ -140,22 +164,30 @@ export function SwipePager({
       if (!drag.axis) {
         if (Math.hypot(dx, dy) < 10) return
         drag.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : 'y'
-        if (drag.axis === 'y' || countRef.current < 2) {
+        if (drag.axis === 'x' && countRef.current < 2) drag.axis = 'y'
+        if (drag.axis === 'x' && !allowYRef.current && countRef.current < 2) {
           dragRef.current = null
           return
         }
-        bindXTouch()
+        capturePointer(event)
+        bindTouch()
       }
-      if (drag.axis !== 'x') return
-      if (event.cancelable) event.preventDefault()
-      if (!drag.captured && event.pointerType === 'mouse') {
-        node.setPointerCapture(event.pointerId)
-        drag.captured = true
-      }
-      node.classList.add('is-dragging')
       if (Math.hypot(dx, dy) > 8) skipTap.current = true
       const now = performance.now()
       const elapsed = now - drag.lastT
+      if (drag.axis === 'y') {
+        if (!drag.stack) return
+        if (event.cancelable) event.preventDefault()
+        if (elapsed > 0) drag.vy = (event.clientY - drag.lastY) / elapsed
+        drag.lastY = event.clientY
+        drag.lastT = now
+        drag.stack.scrollTop = drag.startScroll - dy
+        return
+      }
+      if (drag.axis !== 'x') return
+      if (event.cancelable) event.preventDefault()
+      if (!drag.captured && event.pointerType === 'mouse') capturePointer(event)
+      node.classList.add('is-dragging')
       if (elapsed > 0) drag.vx = (event.clientX - drag.lastX) / elapsed
       drag.lastX = event.clientX
       drag.lastT = now
@@ -167,8 +199,12 @@ export function SwipePager({
       const drag = dragRef.current
       if (!drag || event.pointerId !== drag.id) return
       dragRef.current = null
-      unbindXTouch()
+      unbindTouch()
       node.classList.remove('is-dragging')
+      if (drag.axis === 'y') {
+        if (drag.stack) startStackInertia(drag.stack, drag.vy)
+        return
+      }
       if (drag.axis !== 'x') return
       const width = widthRef.current
       let next = Math.round(-txRef.current / width)
@@ -198,7 +234,7 @@ export function SwipePager({
       node.removeEventListener('pointercancel', endDrag)
       node.removeEventListener('lostpointercapture', endDrag)
       node.removeEventListener('click', onClick)
-      unbindXTouch()
+      unbindTouch()
     }
   }, [])
 
