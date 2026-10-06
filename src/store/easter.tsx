@@ -26,8 +26,29 @@ type EasterContextValue = {
 
 const EasterContext = createContext<EasterContextValue | null>(null)
 
+const BARREL_ROLL_TERMS = [
+  'easteregg',
+  'paulo',
+  'jeova',
+  'jesus',
+  'planta',
+  'echevia',
+  'rode',
+  '360',
+  'suculenta',
+]
+
+function normalizeEggQuery(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/\s+/g, '')
+}
+
 export function isBarrelRollQuery(value: string): boolean {
-  return value.trim().toLowerCase().replace(/\s+/g, '') === 'easteregg'
+  const text = normalizeEggQuery(value)
+  return BARREL_ROLL_TERMS.some((term) => text.includes(term))
 }
 
 export function isMoonCactusName(name?: string | null): boolean {
