@@ -78,7 +78,6 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   const { storage: usage, refreshStorage } = usePlants()
   const usageLabel = usage ? formatStorageUsed(usage.usedBytes) : open ? '…' : '—'
   const [licenseEgg, setLicenseEgg] = useState(false)
-  const licenseClicks = useRef({ count: 0, at: 0 })
 
   useEffect(() => {
     if (!open) return
@@ -99,12 +98,6 @@ export function MenuDrawer({ open, onClose }: MenuDrawerProps) {
   }
 
   const tapLicense = () => {
-    const now = Date.now()
-    if (now - licenseClicks.current.at > 900) licenseClicks.current.count = 0
-    licenseClicks.current.count += 1
-    licenseClicks.current.at = now
-    if (licenseClicks.current.count < 5) return
-    licenseClicks.current.count = 0
     setLicenseEgg(true)
   }
 
